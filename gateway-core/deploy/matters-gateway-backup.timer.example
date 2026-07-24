@@ -1,0 +1,12 @@
+[Unit]
+Description=Back up Matters Fediverse gateway SQLite state daily
+
+[Timer]
+OnCalendar=*-*-* 02:20:00 UTC
+Persistent=true
+AccuracySec=1m
+RandomizedDelaySec=10m
+Unit=matters-gateway-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,19 @@
+[Unit]
+Description=Back up Matters Fediverse gateway SQLite state
+Requires=matters-gateway-core.service
+After=matters-gateway-core.service
+
+[Service]
+Type=oneshot
+User=root
+Environment=GATEWAY_URL=http://127.0.0.1:8787
+Environment=OPERATOR_TOKEN_FILE=/etc/matters-gateway/secrets/operator.token
+Environment=BACKUP_DIR=/var/lib/matters-gateway/runtime/backups
+Environment=BACKUP_RETENTION_DAYS=14
+ExecStart=/usr/local/sbin/matters-gateway-backup-job
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/matters-gateway/runtime/backups

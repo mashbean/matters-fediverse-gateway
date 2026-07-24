@@ -14,7 +14,7 @@ This runbook targets a three-day general-availability launch. Federation remains
   use an explicit staff actor allowlist during controlled delivery and `*` only
   after the general-author compatibility gate passes
 - Current ActivityPub signing private/public key pair, with the previous public key retained during rotation
-- SQLite storage on persistent disk with scheduled backup, reconciliation, delivery, metrics, logs, and alert jobs
+- SQLite storage on persistent disk with scheduled backup, delivery, and metrics jobs plus CloudWatch alerts
 
 ### Cloudflare Worker
 
@@ -58,17 +58,19 @@ circle, and archived article boundaries remain verified.
 ### Phase 2, monitoring and controlled lifecycle
 
 1. Apply `gateway-core/deploy/aws-production-monitoring.sh` with the existing
-   production Slack SNS topic.
-2. Install and enable `matters-gateway-cloudwatch-metrics.timer`.
-3. Confirm the first heartbeat and runtime metrics are present in CloudWatch.
-4. Enable federation on one staff account and publish one new public article,
+   production SNS alert topic.
+2. Install and test `matters-gateway-backup.timer`.
+3. Install and enable `matters-gateway-cloudwatch-metrics.timer`.
+4. Confirm the first heartbeat, backup age, and runtime metrics are present in CloudWatch.
+5. Enable federation on one staff account and publish one new public article,
    revise it, then archive it.
-5. Confirm Article and Threads companion Create, Update, and Delete use stable
+6. Confirm Article and Threads companion Create, Update, and Delete use stable
    object IDs, arrive in order, and leave no pending or dead-letter item.
-6. Verify `/next/fediverse` shows the same queue and audit state as the gateway.
+7. Verify `/next/fediverse` shows the same queue and audit state as the gateway.
 
-Exit gate: all alarms are `OK`, no open dead letters exist, the oldest pending
-item is under five minutes, and no private or paid article leaves Matters.
+Exit gate: all alarms are `OK`, a successful backup is less than 24 hours old,
+no open dead letters exist, the oldest pending item is under five minutes, and
+no private or paid article leaves Matters.
 
 ### Phase 3, general availability
 

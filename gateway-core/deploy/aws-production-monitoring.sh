@@ -72,6 +72,7 @@ put_gateway_alarm() {
 put_gateway_alarm heartbeat GatewayHeartbeat LessThanThreshold 1 2 breaching
 put_gateway_alarm gateway-delivery-dead-letters DeliveryDeadLetters GreaterThanThreshold 0 1 notBreaching
 put_gateway_alarm gateway-delivery-oldest-pending DeliveryOldestPendingAge GreaterThanThreshold 300 1 notBreaching
+put_gateway_alarm gateway-backup-age BackupAge GreaterThanThreshold 86400 1 breaching
 
 aws cloudwatch put-metric-alarm \
   --region "$REGION" \
