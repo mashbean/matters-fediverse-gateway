@@ -2,15 +2,15 @@
 
 ## 文件用途
 
-本文件供上線值班、客服、營運與工程人員使用。正式開放前，必須填入以下負責人。
+本文件供上線值班、客服、營運與工程人員使用。
 
-- 上線負責人 `[待填]`
-- 工程 on-call `[待填]`
-- 客服 on-call `[待填]`
-- 產品決策人 `[待填]`
-- 值班 Slack 頻道 `[待填]`
+- 上線負責人 `hi@matters.town`
+- 工程 on-call `hi@matters.town`
+- 客服 on-call `hi@matters.town`
+- 產品決策人 `hi@matters.town`
+- 專用值班 Slack 頻道 無
 
-監控告警統一送到既有 production Slack 告警管道。`/next/fediverse` 是人工查詢、重送與結案介面。
+監控告警統一送到既有 production 告警通知管道，不另設專用 Slack 頻道。需要人工接手或跨班追蹤時，以 `hi@matters.town` 為聯絡窗口。`/next/fediverse` 是人工查詢、重送與結案介面。
 
 ## 監控範圍
 
@@ -70,13 +70,13 @@
 
 ## 告警收到後的前十五分鐘
 
-1. 在 Slack 告警串回覆「已接手」、時間與值班人
+1. 在既有 production 告警通知串回覆「已接手」、時間與值班人
 2. 開啟 `/next/fediverse`，記錄 pending、retry pending、dead letter 與最早待投遞時間
 3. 查看 SQS 主佇列與死信佇列
 4. 查看 `federation-export-prod` 最近錯誤
 5. 檢查 Gateway 健康狀態與 EC2 狀態
 6. 判斷是否有內容邊界問題
-7. 在告警串更新事件等級、影響範圍與下一次更新時間
+7. 在既有 production 告警通知串更新事件等級、影響範圍與下一次更新時間
 
 若涉及內容邊界、憑證或身分錯置，立即依 P0 回滾，不等待完整根因。
 
@@ -86,7 +86,7 @@
 2. 停用 `federation-export-prod` 的 SQS event source mapping，保留佇列內容
 3. 若 ActivityPub 公開路由異常，關閉 Worker 的一般作者路由
 4. 保留 Gateway、`/next/fediverse`、SQS、DLQ、稽核紀錄、actor registry 與簽章金鑰供調查
-5. 在 Slack 公告影響範圍、回滾時間與下一次更新時間
+5. 在既有 production 告警通知串公告影響範圍、回滾時間與下一次更新時間
 
 回滾期間不得清空 SQS、DLQ 或 Gateway 死信，也不得用重新發文代替重送。
 
@@ -145,4 +145,4 @@ Matters 會在文章封存、關閉個別文章聯邦發佈或關閉作者聯邦
 - 下一個明確動作與負責人
 - 下一次對內與對外更新時間
 
-正式開放前，需由上線負責人確認負責人欄位已填妥、Slack 告警測試已收到、客服範本已交付。
+正式開放前，需由上線負責人確認負責人欄位已填妥、既有 production 告警通知測試已收到、客服範本已交付。
