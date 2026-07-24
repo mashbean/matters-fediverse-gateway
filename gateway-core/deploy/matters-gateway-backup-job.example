@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+gateway_url="${GATEWAY_URL:-http://127.0.0.1:8787}"
+operator_token_file="${OPERATOR_TOKEN_FILE:-/etc/matters-gateway/secrets/operator.token}"
+backup_dir="${BACKUP_DIR:-/var/lib/matters-gateway/runtime/backups}"
+retention_days="${BACKUP_RETENTION_DAYS:-14}"
+
+if [[ ! -r "$operator_token_file" ]]; then
+  echo "Operator token file is not readable: $operator_token_file" >&2
+  exit 1
+fi
+
+if [[ ! "$retention_days" =~ ^[0-9]+$ ]]; then
+  echo "BACKUP_RETENTION_DAYS must be a non-negative integer" >&2
+  exit 1
+fi
+
+operator_token="$(<"$operator_token_file")"
+if [[ -z "$operator_token" ]]; then
+  echo "Operator token file is empty: $operator_token_file" >&2
+  exit 1
+fi
+
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+backup_file="${backup_dir%/}/matters-gateway-scheduled-${timestamp}.sqlite"
+payload="$(printf '{"outputFile":"%s","requestedBy":"systemd-backup-timer"}' "$backup_file")"
+
+curl --config <(printf 'header = "Authorization: Bearer %s"\n' "$operator_token") \
+  --fail-with-body \
+  --silent \
+  --show-error \
+  --max-time 300 \
+  --json "$payload" \
+  "${gateway_url%/}/admin/runtime/storage/backup"
+
+if (( retention_days > 0 )); then
+  find "$backup_dir" \
+    -maxdepth 1 \
+    -type f \
+    -name 'matters-gateway-scheduled-*.sqlite' \
+    -mtime "+$retention_days" \
+    -delete
+fi

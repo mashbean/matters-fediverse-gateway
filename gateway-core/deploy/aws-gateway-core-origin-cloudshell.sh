@@ -289,6 +289,15 @@ install -o root -g root -m 0644 \
 install -o root -g root -m 0644 \
   /opt/matters-gateway/repo/gateway-core/deploy/matters-gateway-delivery.timer.example \
   /etc/systemd/system/matters-gateway-delivery.timer
+install -o root -g root -m 0700 \
+  /opt/matters-gateway/repo/gateway-core/deploy/matters-gateway-backup-job.example \
+  /usr/local/sbin/matters-gateway-backup-job
+install -o root -g root -m 0644 \
+  /opt/matters-gateway/repo/gateway-core/deploy/matters-gateway-backup.service.example \
+  /etc/systemd/system/matters-gateway-backup.service
+install -o root -g root -m 0644 \
+  /opt/matters-gateway/repo/gateway-core/deploy/matters-gateway-backup.timer.example \
+  /etc/systemd/system/matters-gateway-backup.timer
 install -o root -g root -m 0644 \
   /opt/matters-gateway/repo/gateway-core/deploy/matters-gateway-cloudwatch-metrics.service.example \
   /etc/systemd/system/matters-gateway-cloudwatch-metrics.service
@@ -299,6 +308,7 @@ install -o root -g root -m 0644 \
 systemctl daemon-reload
 systemctl disable matters-gateway-core.service
 systemctl disable matters-gateway-delivery.timer
+systemctl disable matters-gateway-backup.timer
 systemctl disable matters-gateway-cloudwatch-metrics.timer
 
 cat >/etc/matters-gateway/README-next-steps.txt <<'TXT'
@@ -312,9 +322,10 @@ Next steps before starting matters-gateway-core:
 7. Store operator.token in the Lambda and matters-server production secret stores.
 8. systemctl enable --now matters-gateway-core.service
 9. systemctl enable --now matters-gateway-delivery.timer
-10. Apply deploy/aws-production-monitoring.sh from an authenticated operator workstation.
-11. systemctl enable --now matters-gateway-cloudwatch-metrics.timer
-12. curl -s http://127.0.0.1:8787/healthz
+10. systemctl enable --now matters-gateway-backup.timer
+11. Apply deploy/aws-production-monitoring.sh from an authenticated operator workstation.
+12. systemctl enable --now matters-gateway-cloudwatch-metrics.timer
+13. curl -s http://127.0.0.1:8787/healthz
 TXT
 EOF
 

@@ -9097,6 +9097,28 @@ test("delivery retry deployment artifacts are syntactically valid and bounded", 
   assert.match(timer, /OnUnitActiveSec=5m/u);
 });
 
+test("scheduled backup deployment artifacts are authenticated and retention-bounded", async () => {
+  const deployDir = path.resolve("deploy");
+  const wrapperPath = path.join(deployDir, "matters-gateway-backup-job.example");
+  const servicePath = path.join(deployDir, "matters-gateway-backup.service.example");
+  const timerPath = path.join(deployDir, "matters-gateway-backup.timer.example");
+
+  await execFile("bash", ["-n", wrapperPath]);
+  const wrapper = await readFile(wrapperPath, "utf8");
+  const service = await readFile(servicePath, "utf8");
+  const timer = await readFile(timerPath, "utf8");
+
+  assert.match(wrapper, /OPERATOR_TOKEN_FILE/u);
+  assert.match(wrapper, /\/admin\/runtime\/storage\/backup/u);
+  assert.match(wrapper, /matters-gateway-scheduled-\*\.sqlite/u);
+  assert.match(wrapper, /-mtime "\+\$retention_days"/u);
+  assert.match(service, /Type=oneshot/u);
+  assert.match(service, /ProtectSystem=strict/u);
+  assert.match(service, /ReadWritePaths=\/var\/lib\/matters-gateway\/runtime\/backups/u);
+  assert.match(timer, /OnCalendar=\*-\*-\* 02:20:00 UTC/u);
+  assert.match(timer, /Persistent=true/u);
+});
+
 test("production monitoring deployment artifacts publish bounded metrics and alarms", async () => {
   const deployDir = path.resolve("deploy");
   const monitoringScriptPath = path.join(deployDir, "aws-production-monitoring.sh");
@@ -9113,10 +9135,12 @@ test("production monitoring deployment artifacts publish bounded metrics and ala
   assert.match(monitoringScript, /ApproximateAgeOfOldestMessage/u);
   assert.match(monitoringScript, /ApproximateNumberOfMessagesVisible/u);
   assert.match(monitoringScript, /StatusCheckFailed/u);
+  assert.match(monitoringScript, /BackupAge GreaterThanThreshold 86400/u);
   assert.match(monitoringScript, /--alarm-actions "\$SNS_TOPIC_ARN"/u);
   assert.match(service, /publish-cloudwatch-metrics\.mjs/u);
   assert.match(service, /NoNewPrivileges=true/u);
   assert.match(service, /ProtectSystem=strict/u);
+  assert.match(service, /ReadWritePaths=\/var\/lib\/matters-gateway\/runtime/u);
   assert.match(timer, /OnBootSec=3m/u);
   assert.match(timer, /OnUnitActiveSec=5m/u);
 });

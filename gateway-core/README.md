@@ -363,6 +363,9 @@ The receiver uses a bearer-token-only model. It is intended for staging drills b
 - Delivery retry wrapper: `deploy/matters-gateway-delivery-job.example`
 - Delivery retry service: `deploy/matters-gateway-delivery.service.example`
 - Delivery retry timer: `deploy/matters-gateway-delivery.timer.example`
+- SQLite backup wrapper: `deploy/matters-gateway-backup-job.example`
+- SQLite backup service: `deploy/matters-gateway-backup.service.example`
+- SQLite backup timer: `deploy/matters-gateway-backup.timer.example`
 - CloudWatch metrics service: `deploy/matters-gateway-cloudwatch-metrics.service.example`
 - CloudWatch metrics timer: `deploy/matters-gateway-cloudwatch-metrics.timer.example`
 - Production alarms: `deploy/aws-production-monitoring.sh`
@@ -405,14 +408,25 @@ systemctl enable --now matters-gateway-delivery.timer
 systemctl list-timers matters-gateway-delivery.timer
 ```
 
+The production backup timer calls the authenticated storage backup endpoint
+once per day and keeps fourteen days of timer-created SQLite backups. It does
+not delete manual or release backups. Install the backup wrapper, service, and
+timer from `deploy/`, then verify one successful run before enabling the timer:
+
+```bash
+systemctl start matters-gateway-backup.service
+systemctl enable --now matters-gateway-backup.timer
+systemctl list-timers matters-gateway-backup.timer
+```
+
 The production metrics timer publishes a five-minute heartbeat plus bounded
 delivery gauges to the `Matters/FediverseGateway` CloudWatch namespace. Apply
 `deploy/aws-production-monitoring.sh` once from an authenticated operator
 workstation to grant the instance namespace-scoped `PutMetricData` permission
-and create alarms for heartbeat loss, gateway dead letters, oldest pending
-delivery age, SQS age and DLQ depth, Lambda errors and throttles, and EC2 status
-checks. The script requires explicit `INSTANCE_ID`, `INSTANCE_ROLE_NAME`, and
-`SNS_TOPIC_ARN` values.
+and create alarms for heartbeat loss, backup age, gateway dead letters, oldest
+pending delivery age, SQS age and DLQ depth, Lambda errors and throttles, and
+EC2 status checks. The script requires explicit `INSTANCE_ID`,
+`INSTANCE_ROLE_NAME`, and `SNS_TOPIC_ARN` values.
 
 The timer starts two minutes after boot and again five minutes after each run.
 Only pending items are processed. A still-running oneshot service is not started
