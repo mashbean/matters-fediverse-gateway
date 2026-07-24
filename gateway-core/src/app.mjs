@@ -1961,6 +1961,49 @@ export function createGatewayApp({
     ];
   }
 
+  function preserveOriginalArticlePublishedAt(actorHandle, object) {
+    if (!object || typeof object !== "object" || Array.isArray(object) || object.type !== "Article") {
+      return object;
+    }
+
+    const canonicalObject = canonicalizeArticleObjectId({
+      object,
+      instance: config.instance,
+    });
+    if (!canonicalObject?.id) {
+      return object;
+    }
+
+    const originalCreate = (store.getLocalOutboundActivities?.({ actorHandle }) ?? []).find((entry) => {
+      if (entry?.activity?.type !== "Create") {
+        return false;
+      }
+
+      const createdObject = canonicalizeArticleObjectId({
+        object: entry.activity.object,
+        instance: config.instance,
+      });
+      return createdObject?.type === "Article" && createdObject.id === canonicalObject.id;
+    });
+    if (!originalCreate) {
+      return object;
+    }
+
+    const originalPublished =
+      typeof originalCreate.activity.object.published === "string" &&
+      originalCreate.activity.object.published.trim()
+        ? originalCreate.activity.object.published.trim()
+        : originalCreate.createdAt;
+    if (typeof originalPublished !== "string" || !originalPublished.trim()) {
+      return object;
+    }
+
+    return {
+      ...object,
+      published: originalPublished.trim(),
+    };
+  }
+
   function getLocalOutboundActivity(actorHandle, activityId) {
     return (
       store
@@ -4609,7 +4652,7 @@ export function createGatewayApp({
 
         const activity = buildUpdateActivity({
           actor,
-          object: payload.object,
+          object: preserveOriginalArticlePublishedAt(handle, payload.object),
           now: clock(),
           instance: config.instance,
         });
