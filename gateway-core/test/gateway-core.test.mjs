@@ -4163,6 +4163,7 @@ test("receiver-scoped Note companions follow Article Create, Update, and Delete 
           name: "Threads Wildcard Preview",
           url: "https://matters.example/a/wildcard-preview",
           content: "<p>Wildcard body</p>",
+          published: "2026-03-21T00:00:00.000Z",
         },
       }),
     }),
@@ -4189,6 +4190,7 @@ test("receiver-scoped Note companions follow Article Create, Update, and Delete 
           summary: "Updated companion summary",
           url: "https://matters.example/a/wildcard-preview",
           content: "<p>Updated wildcard body</p>",
+          published: "2026-03-22T00:00:00.000Z",
           updated: "2026-03-22T00:00:00.000Z",
         },
       }),
@@ -4200,12 +4202,15 @@ test("receiver-scoped Note companions follow Article Create, Update, and Delete 
   assert.deepEqual(updatePayload.noteCompanion.recipients, ["https://threads.net/ap/users/123/"]);
   assert.equal(deliveries.length, 3);
   assert.equal(deliveries[0].activity.object.type, "Article");
+  assert.equal(deliveries[0].activity.object.published, "2026-03-21T00:00:00.000Z");
+  assert.equal(deliveries[0].activity.object.updated, "2026-03-22T00:00:00.000Z");
   assert.equal(deliveries[1].activity.object.type, "Article");
   assert.equal(deliveries[2].targetActorId, "https://threads.net/ap/users/123/");
   assert.equal(deliveries[2].activity.type, "Update");
   assert.equal(deliveries[2].activity.object.type, "Note");
   assert.equal(deliveries[2].activity.object.id, companionObjectId);
   assert.match(deliveries[2].activity.object.content, /Threads Wildcard Preview Updated/);
+  assert.equal(deliveries[2].activity.object.published, "2026-03-21T00:00:00.000Z");
   assert.equal(deliveries[2].activity.object.updated, "2026-03-22T00:00:00.000Z");
 
   deliveries.length = 0;
