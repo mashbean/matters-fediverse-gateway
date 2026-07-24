@@ -58,7 +58,7 @@ circle, and archived article boundaries remain verified.
 ### Phase 2, monitoring and controlled lifecycle
 
 1. Apply `gateway-core/deploy/aws-production-monitoring.sh` with the existing
-   production Slack SNS topic.
+   production SNS alert topic.
 2. Install and enable `matters-gateway-cloudwatch-metrics.timer`.
 3. Confirm the first heartbeat and runtime metrics are present in CloudWatch.
 4. Enable federation on one staff account and publish one new public article,
