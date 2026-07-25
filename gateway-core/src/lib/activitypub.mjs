@@ -287,16 +287,18 @@ export function buildPersonUpdateActivity({ actor, now, instance }) {
   };
 }
 
-function normalizeDeleteObject({ objectId, object, actor }) {
+function normalizeDeleteObject({ objectId, object, actor, instance }) {
   if (!object || typeof object !== "object" || Array.isArray(object)) {
     return objectId;
   }
 
-  const normalizedId = typeof object.id === "string" && object.id.trim() ? object.id.trim() : objectId;
+  const canonicalObject = canonicalizeArticleObjectId({ object, instance });
+  const normalizedId =
+    typeof canonicalObject.id === "string" && canonicalObject.id.trim() ? canonicalObject.id.trim() : objectId;
   return {
-    ...object,
+    ...canonicalObject,
     id: normalizedId,
-    attributedTo: object.attributedTo ?? actor.actorUrl,
+    attributedTo: canonicalObject.attributedTo ?? actor.actorUrl,
   };
 }
 
@@ -310,7 +312,7 @@ export function buildDeleteActivity({ actor, objectId, object = null, now, insta
     actor: actor.actorUrl,
     to: [PUBLIC_AUDIENCE],
     cc: [actor.followersUrl],
-    object: normalizeDeleteObject({ objectId, object, actor }),
+    object: normalizeDeleteObject({ objectId, object, actor, instance }),
   };
 }
 

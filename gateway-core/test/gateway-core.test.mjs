@@ -4080,6 +4080,77 @@ test("outbox Create canonicalizes same-domain Article ids behind public Activity
   ]);
 });
 
+test("outbox Delete preserves the canonical Article id used by Create and Update", async () => {
+  const { app, config, store, deliveries } = await createHarness();
+  config.instance.activityBaseUrl = "https://matters.example/ap";
+  await store.upsertFollower("alice", {
+    remoteActorId: "https://remote.example/users/zoe",
+    inbox: "https://remote.example/users/zoe/inbox",
+    sharedInbox: "https://remote.example/inbox",
+    status: "accepted",
+    followedAt: "2026-03-21T00:00:00.000Z",
+    lastActivityId: "https://remote.example/activities/follow-1",
+  });
+
+  const articleUrl = "https://matters.example/a/n0wacr6zgyyq";
+  const canonicalObjectId = "https://matters.example/ap/articles/a-n0wacr6zgyyq";
+  const articleObject = {
+    id: articleUrl,
+    type: "Article",
+    name: "Stable Delete Identity",
+    url: articleUrl,
+    content: "<p>Create body</p>",
+  };
+  const createResponse = await app.handle(
+    new Request("https://matters.example/users/alice/outbox/create", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        object: articleObject,
+      }),
+    }),
+  );
+  assert.equal(createResponse.status, 202);
+  assert.equal(deliveries.at(-1).activity.object.id, canonicalObjectId);
+
+  deliveries.length = 0;
+  const updateResponse = await app.handle(
+    new Request("https://matters.example/users/alice/outbox/update", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        object: {
+          ...articleObject,
+          content: "<p>Updated body</p>",
+        },
+      }),
+    }),
+  );
+  assert.equal(updateResponse.status, 202);
+  assert.equal(deliveries.at(-1).activity.object.id, canonicalObjectId);
+
+  deliveries.length = 0;
+  const deleteResponse = await app.handle(
+    new Request("https://matters.example/users/alice/outbox/delete", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        objectId: articleUrl,
+        object: articleObject,
+      }),
+    }),
+  );
+  assert.equal(deleteResponse.status, 202);
+  assert.equal(deliveries.at(-1).activity.object.id, canonicalObjectId);
+  assert.equal(deliveries.at(-1).activity.object.url, articleUrl);
+});
+
 test("receiver-scoped Note companions follow Article Create, Update, and Delete for explicit and wildcard actors", async () => {
   const { app, config, store, deliveries } = await createHarness();
   config.instance.activityBaseUrl = "https://matters.example/ap";
