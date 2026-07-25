@@ -2,12 +2,12 @@
 
 An open-source ActivityPub gateway that connects Matters' long-form publishing layer to the Fediverse. It lets Mastodon, Misskey, GoToSocial, and other ActivityPub users discover Matters authors, read full public articles, and interact through follows, replies, likes, and boosts while paid, encrypted, private, and message-like content stays outside federation.
 
-> **Status**: Production release candidate for the July 2026 general-author launch.
-> **Demo / docs**: <https://thematters.github.io/matters-fediverse-gateway/>
+> **Status**: Production. General-author federation launched on 2026-07-25.
+> **Project closeout / docs**: <https://fediverse-gateway.matters.town/>
 > **Canonical demo actor**: `acct:matters@matters.town`
 > **Worker testbed**: <https://gateway-demo.matters.town>
 > **Source**: <https://github.com/thematters/matters-fediverse-gateway>
-> **Current integration slice**: General-author controls are merged to the production server and web branches. Production `matters-server` runs the reviewed `sqs` trigger, `federation-export-prod` v0.14.3 consumes the FIFO queue with partial-batch failure handling, and the AWS `gateway-core` origin is live behind the narrow Cloudflare Worker routes. Dynamic Matters actors, profile images, automatic public Article delivery, follow state, social interactions, retry handling, and the protected `/next/fediverse` operations surface are deployed. Threads receives a receiver-scoped companion `Note`; this release candidate extends the same stable companion object through Article Create, Update, and Delete, opens the adapter to all opted-in authors, and adds CloudWatch alarms routed through the existing production Slack notification topic.
+> **Current integration slice**: General-author controls are deployed to the production server and web application. Production `matters-server` runs the reviewed `sqs` trigger, `federation-export-prod` v0.14.3 consumes the FIFO queue with partial-batch failure handling, and the AWS `gateway-core` origin is live behind narrow Cloudflare Worker routes. Dynamic Matters actors, profile images, automatic public Article delivery, stable Create / Update / Delete, follow state, social interactions, retry handling, backups, CloudWatch monitoring, and the protected `/next/fediverse` operations surface are deployed. Threads receives a receiver-scoped companion `Note` for every opted-in author. Production acceptance verified remote lifecycle readback, zero pending and open dead-letter items, and all nine launch alarms in `OK`.
 
 ## Why
 
@@ -81,7 +81,7 @@ These static GitHub Pages endpoints demonstrate the same read-side federation su
 - `matters-server` PR [#4798](https://github.com/thematters/matters-server/pull/4798) is merged to `master` and adds `User.features.fediverseBeta` as the public-safe current-viewer eligibility field. `User.oss.featureFlags` remains admin-only inventory and should not gate user-facing Fediverse controls.
 - `matters-web` PR [#5905](https://github.com/thematters/matters-web/pull/5905) is merged to `master` and restores Fediverse settings, draft controls, and article edit controls through `viewer.features.fediverseBeta`. PR [#5906](https://github.com/thematters/matters-web/pull/5906) is also merged and hides the settings row until eligibility is loaded; develop parity PR [#5907](https://github.com/thematters/matters-web/pull/5907) is merged and deployed on `matters.icu`.
 - GoToSocial probe has local contract coverage; public GoToSocial run is intentionally deferred
-- 171 `gateway-core` automated tests passing in the latest local verification snapshot
+- 173 `gateway-core` automated tests passing in the latest local verification snapshot
 - Public static ActivityPub prototype endpoints and seed bundle live under `thematters.github.io`
 - Canonical Matters-domain Cloudflare Worker routes are deployed under `matters.town`, including the pilot actor `acct:mashbeanmatters@matters.town`; configured pilot reads and inbox writes are proxied to the AWS `gateway-core` origin
 - Isolated Cloudflare Worker testbed remains deployed under `gateway-demo.matters.town`
@@ -105,24 +105,28 @@ These static GitHub Pages endpoints demonstrate the same read-side federation su
 - Real public Matters articles for `@charlesmungerai` were exported into a staging bundle, served through `charlesmungerai@staging-gateway.matters.town`, and one fresh public Article was delivered to gyutte.site Misskey
 - The gateway execution/reporting docs were merged in PR [#5](https://github.com/thematters/matters-fediverse-gateway/pull/5)
 
-## Formal launch gates
+## Production launch completed
 
-The production path is implemented. Formal opening requires the following
-release gates rather than additional protocol architecture.
+The general-author launch passed its final production acceptance on 2026-07-25.
 
-1. Merge and deploy the stable Threads companion Create, Update, and Delete
-   lifecycle.
-2. Change the production Threads companion actor allowlist to `["*"]` while
-   keeping the receiver allowlist restricted to `threads.net`.
-3. Enable the five-minute CloudWatch metrics timer and apply
-   `gateway-core/deploy/aws-production-monitoring.sh` with the existing
-   production Slack SNS topic.
-4. Run one opted-in production article through publish, revise, and archive,
-   then confirm gateway queue health and receiver readback.
-5. Assign the named launch and support owners in
-   [`docs/production-on-call-zh-TW.md`](docs/production-on-call-zh-TW.md), review
-   [`docs/production-launch-comms-zh-TW.md`](docs/production-launch-comms-zh-TW.md),
-   and publish only after the release owner gives the go decision.
+1. Stable Article and Threads companion Create, Update, and Delete are deployed.
+2. The Threads companion accepts every opted-in author while remaining scoped
+   to `threads.net`.
+3. CloudWatch monitoring, the five-minute metrics timer, delivery retry timer,
+   SQLite backup timer, and production on-call guidance are active.
+4. A production article passed publish, revise, and archive readback on Threads
+   and Mastodon with stable object identity.
+5. Gateway pending work, unresolved dead letters, the SQS queue, and the SQS
+   DLQ were empty at acceptance. All nine launch alarms were `OK`.
+6. General-author settings, public-only eligibility, remote-copy disclosure,
+   support guidance, and the protected `/next/fediverse` operations surface are
+   deployed.
+
+The project is now in normal operations and iterative improvement. Remote
+services still control indexing delay, rendering, caching, and the eventual
+handling of Delete. Those receiver-side limits are documented in
+[`docs/production-launch-comms-zh-TW.md`](docs/production-launch-comms-zh-TW.md)
+and [`docs/production-on-call-zh-TW.md`](docs/production-on-call-zh-TW.md).
 
 ## G1 roadmap, May-July 2026
 

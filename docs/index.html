@@ -1,630 +1,1917 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="zh-Hant">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Matters Fediverse Gateway</title>
-<meta name="description" content="An open-source ActivityPub gateway that connects Matters long-form publishing to the Fediverse while keeping paid, encrypted, and private content outside federation.">
-<meta property="og:title" content="Matters Fediverse Gateway">
-<meta property="og:description" content="Long-form publishing x ActivityPub. An open gateway from Matters to the Fediverse.">
-<meta property="og:type" content="website">
-<link rel="icon" type="image/svg+xml" href="static/favicon.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="static/matters-ds/tokens.css">
-<style>
-  :root{
-    --space-sp24: 24px;
-    --space-sp40: 40px;
-    --space-sp48: 48px;
-    --space-sp64: 64px;
-    --space-sp80: 80px;
-    --font-family-mono: "SF Mono", Menlo, Consolas, monospace;
-    --radius-card: 8px;
-    --radius-pill: 999px;
-    --space-sp20: 20px;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
-  body{
-    font-family:var(--font-family-ui);
-    color:var(--color-grey-black);
-    background:var(--color-grey-grey-lighter);
-    -webkit-font-smoothing:antialiased;
-  }
-
-  .page{
-    background:var(--color-grey-white);
-    max-width:820px;
-    margin:0 auto;
-    padding:var(--space-sp64) var(--space-sp32) var(--space-sp80);
-    border-left:1px solid var(--color-grey-grey-light);
-    border-right:1px solid var(--color-grey-grey-light);
-    min-height:100vh;
-  }
-  @media (max-width:640px){
-    .page{padding:var(--space-sp32) var(--space-sp16) var(--space-sp48); border-left:none; border-right:none;}
-  }
-
-  /* brand band */
-  .brand{
-    display:flex;align-items:center;gap:var(--space-sp12);
-    padding-bottom:var(--space-sp24);margin-bottom:var(--space-sp40);
-    border-bottom:1px solid var(--color-grey-grey-light);
-  }
-  .brand .logo{height:24px;width:auto;color:var(--color-grey-black);display:block}
-  .brand .divider{color:var(--color-grey-grey-light);font-weight:300}
-  .brand .product{
-    font-size:13px;line-height:18px;font-weight:500;
-    color:var(--color-grey-grey-darker);letter-spacing:0;
-  }
-
-  /* hero */
-  .hero{margin-bottom:var(--space-sp48)}
-  .badge{
-    display:inline-block;
-    padding:4px var(--space-sp10);
-    background:var(--color-primary-100);color:var(--color-primary-700);
-    border-radius:var(--radius-pill);
-    font-size:12px;line-height:18px;font-weight:600;letter-spacing:0;
-    text-transform:uppercase;
-    margin-bottom:var(--space-sp16);
-  }
-  .hero h1{
-    font-family:var(--font-family-reading);
-    font-size:32px;line-height:54px;letter-spacing:0;
-    font-weight:600;
-    margin:0 0 var(--space-sp12);
-    color:var(--color-grey-black);
-  }
-  @media (max-width:640px){
-    .hero h1{font-size:24px;line-height:36px}
-  }
-  .hero .subtitle{
-    font-family:var(--font-family-reading);
-    font-size:20px;line-height:35px;font-weight:400;
-    color:var(--color-grey-black);
-    margin:0 0 var(--space-sp24);
-  }
-  @media (max-width:640px){
-    .hero .subtitle{font-size:18px;line-height:30px}
-  }
-  .demo-note{
-    background:var(--color-primary-0);
-    border-left:3px solid var(--color-brand-new-purple);
-    padding:var(--space-sp14) var(--space-sp16);
-    border-radius:0 8px 8px 0;
-    font-size:14px;line-height:22px;
-    color:var(--color-grey-black);
-    margin:0;
-  }
-
-  /* sections */
-  section{margin-bottom:var(--space-sp48)}
-  h2{
-    font-family:var(--font-family-ui);
-    font-size:24px;line-height:36px;font-weight:600;letter-spacing:0;
-    margin:0 0 var(--space-sp16);padding-bottom:var(--space-sp8);
-    color:var(--color-grey-black);
-    border-bottom:1px solid var(--color-grey-grey-light);
-  }
-  h3{
-    font-family:var(--font-family-ui);
-    font-size:18px;line-height:28px;font-weight:600;
-    margin:var(--space-sp24) 0 var(--space-sp8);
-    color:var(--color-grey-black);
-  }
-  p{
-    font-size:16px;line-height:1.75;
-    margin:0 0 var(--space-sp14);
-    color:var(--color-grey-black);
-  }
-  a{
-    color:var(--color-brand-new-purple);
-    text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;
-    transition:text-decoration-thickness 120ms ease;
-  }
-  a:hover{text-decoration-thickness:2px}
-  a:focus-visible{outline:2px solid var(--color-brand-new-purple);outline-offset:2px;border-radius:2px}
-
-  ul{padding-left:22px;margin:0 0 var(--space-sp16)}
-  li{margin-bottom:var(--space-sp4);line-height:1.75}
-
-  /* code */
-  code{
-    background:var(--color-primary-0);
-    padding:1px var(--space-sp6);border-radius:4px;
-    font-family:var(--font-family-mono);font-size:13px;
-    color:var(--color-primary-800);
-  }
-  pre{
-    background:var(--color-grey-grey-lighter);
-    padding:var(--space-sp14) var(--space-sp16);border-radius:8px;
-    font-family:var(--font-family-mono);font-size:13px;
-    overflow-x:auto;line-height:1.5;
-  }
-  pre code{background:transparent;padding:0;color:inherit}
-
-  .ascii{
-    font-family:var(--font-family-mono);font-size:12px;line-height:1.45;
-    background:var(--color-grey-white);
-    border:1px solid var(--color-grey-grey-light);
-    padding:var(--space-sp16);border-radius:8px;
-    overflow-x:auto;color:var(--color-grey-grey-darker);
-  }
-
-  /* stage list */
-  .stage-list{
-    display:grid;grid-template-columns:auto 1fr auto;
-    gap:var(--space-sp10) var(--space-sp16);
-    align-items:baseline;
-    margin:var(--space-sp8) 0 var(--space-sp16);
-  }
-  .stage-list .label{
-    font-family:var(--font-family-mono);
-    font-size:12px;line-height:18px;
-    color:var(--color-grey-grey-dark);
-  }
-  .stage-list .name{font-size:14px;line-height:22px}
-  .stage-list .status{
-    font-size:12px;line-height:18px;font-weight:600;
-    padding:2px var(--space-sp10);
-    border-radius:var(--radius-pill);
-    justify-self:end;
-  }
-  .status.done{background:var(--color-secondary-0);color:var(--color-secondary-800)}
-  .status.wip{background:var(--color-attention-0);color:var(--color-attention-700)}
-  .status.todo{background:var(--color-grey-grey-hover);color:var(--color-grey-grey-darker)}
-
-  /* table */
-  table{
-    border-collapse:collapse;width:100%;
-    font-size:14px;line-height:22px;
-    margin:var(--space-sp8) 0 var(--space-sp16);
-  }
-  th,td{
-    text-align:left;padding:var(--space-sp10) var(--space-sp12);
-    border-bottom:1px solid var(--color-grey-grey-light);
-    vertical-align:top;
-  }
-  th{
-    font-weight:600;
-    background:var(--color-grey-grey-lighter);
-    color:var(--color-grey-black);
-  }
-
-  /* decision cards */
-  .grid2{
-    display:grid;grid-template-columns:1fr 1fr;
-    gap:var(--space-sp16);
-    margin:var(--space-sp16) 0;
-  }
-  @media (max-width:640px){.grid2{grid-template-columns:1fr}}
-  .card{
-    background:var(--color-grey-white);
-    border:1px solid var(--color-grey-grey-light);
-    border-radius:var(--radius-card);
-    padding:var(--space-sp16);
-    box-shadow:var(--shadow-shadow1);
-    transition:box-shadow 160ms ease, transform 160ms ease;
-  }
-  .card:hover{
-    box-shadow:var(--shadow-dropdown);
-    transform:translateY(-2px);
-  }
-  .card h3{
-    margin:0 0 var(--space-sp8);
-    font-size:18px;line-height:28px;
-    color:var(--color-grey-black);
-  }
-  .card p{margin:0;font-size:14px;line-height:22px;color:var(--color-grey-grey-darker)}
-  .card code{font-size:12px}
-
-  /* visual flow */
-  .flow{
-    display:grid;
-    grid-template-columns:repeat(5, minmax(0, 1fr));
-    gap:var(--space-sp10);
-    margin:var(--space-sp20) 0 var(--space-sp16);
-  }
-  @media (max-width:760px){.flow{grid-template-columns:1fr}}
-  .flow-step{
-    min-height:168px;
-    border:1px solid var(--color-grey-grey-light);
-    border-radius:var(--radius-card);
-    padding:var(--space-sp14);
-    background:var(--color-grey-white);
-    display:flex;
-    flex-direction:column;
-    gap:var(--space-sp8);
-    position:relative;
-  }
-  .flow-step::after{
-    content:"";
-    position:absolute;
-    right:-9px;
-    top:50%;
-    width:16px;
-    height:1px;
-    background:var(--color-grey-grey-light);
-  }
-  .flow-step:last-child::after{display:none}
-  @media (max-width:760px){
-    .flow-step{min-height:0}
-    .flow-step::after{
-      right:auto;
-      top:auto;
-      left:24px;
-      bottom:-9px;
-      width:1px;
-      height:16px;
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matters 聯邦宇宙正式上線 | Matters Fediverse Gateway</title>
+  <meta name="description" content="Matters Fediverse Gateway 正式上線紀錄。了解作者功能、ActivityPub 架構、互通成果、開發挑戰與正式維運方式。">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="canonical" href="https://fediverse-gateway.matters.town/">
+  <link rel="alternate" hreflang="zh-Hant" href="https://fediverse-gateway.matters.town/?lang=zh-Hant">
+  <link rel="alternate" hreflang="en" href="https://fediverse-gateway.matters.town/?lang=en">
+  <meta property="og:title" content="Matters 聯邦宇宙正式上線">
+  <meta property="og:description" content="從公開文章到跨站互動，Matters 已完成聯邦宇宙正式上線。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://fediverse-gateway.matters.town/">
+  <meta property="og:site_name" content="Matters Fediverse Gateway">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&amp;family=Noto+Serif+TC:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/matters-ds/tokens.css">
+  <style>
+    :root {
+      --page-max: 1160px;
+      --ink: #1f1f1f;
+      --muted: #676767;
+      --line: #e7e5ea;
+      --paper: #ffffff;
+      --canvas: #f7f6f8;
+      --purple: #6e3ff3;
+      --purple-dark: #4d24bd;
+      --purple-soft: #f1edff;
+      --green: #177a55;
+      --green-soft: #eaf8f1;
+      --orange: #a45511;
+      --orange-soft: #fff4e7;
+      --blue: #17699c;
+      --blue-soft: #eaf5fb;
+      --shadow: 0 18px 60px rgba(34, 23, 55, 0.08);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --font-ui: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-reading: "Noto Serif TC", "Noto Serif", Georgia, serif;
+      color-scheme: light;
     }
-  }
-  .flow-icon{
-    width:36px;
-    height:36px;
-    border-radius:8px;
-    background:var(--color-primary-0);
-    color:var(--color-brand-new-purple);
-    display:grid;
-    place-items:center;
-  }
-  .flow-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
-  .flow-step h3{
-    margin:0;
-    font-size:15px;
-    line-height:22px;
-  }
-  .flow-step p{
-    margin:0;
-    font-size:13px;
-    line-height:20px;
-    color:var(--color-grey-grey-darker);
-  }
-  .flow-step code{font-size:11px}
 
-  .effect-strip{
-    display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:var(--space-sp12);
-    margin:var(--space-sp16) 0;
-  }
-  @media (max-width:640px){.effect-strip{grid-template-columns:1fr}}
-  .effect{
-    border:1px solid var(--color-grey-grey-light);
-    border-radius:var(--radius-card);
-    padding:var(--space-sp14);
-    background:var(--color-grey-grey-lighter);
-  }
-  .effect strong{
-    display:block;
-    font-size:14px;
-    line-height:22px;
-    margin-bottom:var(--space-sp4);
-  }
-  .effect span{
-    display:block;
-    font-size:13px;
-    line-height:20px;
-    color:var(--color-grey-grey-darker);
-  }
+    * {
+      box-sizing: border-box;
+    }
 
-  .bundle-list{
-    display:grid;
-    gap:var(--space-sp8);
-    margin:var(--space-sp16) 0;
-  }
-  .bundle-row{
-    display:grid;
-    grid-template-columns:190px 1fr;
-    gap:var(--space-sp12);
-    align-items:start;
-    border-bottom:1px solid var(--color-grey-grey-light);
-    padding:var(--space-sp10) 0;
-  }
-  @media (max-width:640px){.bundle-row{grid-template-columns:1fr}}
-  .bundle-row strong{
-    font-size:14px;
-    line-height:22px;
-  }
-  .bundle-row span{
-    font-size:14px;
-    line-height:22px;
-    color:var(--color-grey-grey-darker);
-  }
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 92px;
+    }
 
-  .callout{
-    border:1px solid var(--color-secondary-200);
-    border-radius:var(--radius-card);
-    padding:var(--space-sp14) var(--space-sp16);
-    background:var(--color-secondary-0);
-    font-size:14px;
-    line-height:22px;
-    color:var(--color-grey-black);
-  }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 88% 2%, rgba(110, 63, 243, 0.09), transparent 30rem),
+        linear-gradient(180deg, #fff 0, var(--canvas) 34rem, var(--canvas) 100%);
+      font-family: var(--font-ui);
+      font-size: 16px;
+      line-height: 1.72;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
 
-  /* link grid */
-  .links{
-    display:flex;flex-wrap:wrap;gap:var(--space-sp8) var(--space-sp16);
-    margin-top:var(--space-sp16);
-  }
-  .links a{
-    display:inline-flex;align-items:center;
-    padding:var(--space-sp8) var(--space-sp14);
-    border-radius:var(--radius-pill);
-    border:1px solid var(--color-brand-new-purple);
-    color:var(--color-brand-new-purple);
-    font-size:14px;line-height:22px;font-weight:500;
-    text-decoration:none;
-    transition:background-color 120ms ease;
-  }
-  .links a:hover{background:var(--color-primary-0);text-decoration:none}
+    a {
+      color: inherit;
+    }
 
-  /* footer */
-  footer{
-    margin-top:var(--space-sp64);
-    padding-top:var(--space-sp24);
-    border-top:1px solid var(--color-grey-grey-light);
-    font-size:12px;line-height:18px;
-    color:var(--color-grey-grey-darker);
-  }
-  footer p{
-    font-size:12px;line-height:18px;
-    margin:0 0 var(--space-sp4);
-    color:var(--color-grey-grey-darker);
-  }
-</style>
+    a:focus-visible,
+    button:focus-visible {
+      outline: 3px solid rgba(110, 63, 243, 0.35);
+      outline-offset: 3px;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 100;
+      padding: 9px 14px;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--purple-dark);
+      transform: translateY(-160%);
+      transition: transform 160ms ease;
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+
+    .shell {
+      width: min(calc(100% - 40px), var(--page-max));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(231, 229, 234, 0.92);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar-inner {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      text-decoration: none;
+    }
+
+    .brand img {
+      display: block;
+      width: auto;
+      height: 24px;
+    }
+
+    .brand-divider {
+      width: 1px;
+      height: 22px;
+      background: var(--line);
+    }
+
+    .brand-name {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav a {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      color: var(--purple-dark);
+    }
+
+    .language-switch {
+      display: inline-flex;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--canvas);
+    }
+
+    .language-switch button {
+      min-width: 46px;
+      padding: 6px 10px;
+      border: 0;
+      border-radius: 999px;
+      color: var(--muted);
+      background: transparent;
+      font: 600 12px/1.2 var(--font-ui);
+      cursor: pointer;
+    }
+
+    .language-switch button[aria-pressed="true"] {
+      color: #fff;
+      background: var(--purple-dark);
+      box-shadow: 0 2px 8px rgba(78, 35, 191, 0.24);
+    }
+
+    main {
+      overflow: hidden;
+    }
+
+    [data-copy][hidden] {
+      display: none !important;
+    }
+
+    .hero {
+      position: relative;
+      padding: 90px 0 58px;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: 54px;
+      right: -110px;
+      width: 330px;
+      height: 330px;
+      border: 1px solid rgba(110, 63, 243, 0.16);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 58px rgba(110, 63, 243, 0.035),
+        0 0 0 116px rgba(110, 63, 243, 0.025);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.68fr);
+      gap: 64px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 22px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #28b57d;
+      box-shadow: 0 0 0 5px rgba(40, 181, 125, 0.13);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 800px;
+      margin-bottom: 24px;
+      font-family: var(--font-reading);
+      font-size: clamp(42px, 6.3vw, 78px);
+      font-weight: 600;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+    }
+
+    .hero-lead {
+      max-width: 720px;
+      margin-bottom: 30px;
+      color: #4b4b4b;
+      font-family: var(--font-reading);
+      font-size: clamp(19px, 2.2vw, 25px);
+      line-height: 1.65;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 10px 18px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 650;
+      text-decoration: none;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(34, 23, 55, 0.1);
+    }
+
+    .button.primary {
+      border-color: var(--purple-dark);
+      color: #fff;
+      background: var(--purple-dark);
+    }
+
+    .button.secondary {
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .launch-card {
+      position: relative;
+      padding: 26px;
+      border: 1px solid rgba(110, 63, 243, 0.16);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: var(--shadow);
+    }
+
+    .launch-card-kicker {
+      margin-bottom: 8px;
+      color: var(--purple-dark);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .launch-card strong {
+      display: block;
+      margin-bottom: 7px;
+      font-family: var(--font-reading);
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .launch-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .launch-card-rule {
+      height: 1px;
+      margin: 20px 0;
+      background: var(--line);
+    }
+
+    .launch-card-meta {
+      display: grid;
+      gap: 11px;
+      margin: 0;
+    }
+
+    .launch-card-meta div {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .launch-card-meta dt,
+    .launch-card-meta dd {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .launch-card-meta dt {
+      color: var(--muted);
+    }
+
+    .launch-card-meta dd {
+      font-weight: 650;
+      text-align: right;
+    }
+
+    .snapshot {
+      padding: 0 0 82px;
+    }
+
+    .snapshot-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .snapshot-item {
+      min-height: 160px;
+      padding: 28px;
+      border-right: 1px solid var(--line);
+    }
+
+    .snapshot-item:last-child {
+      border-right: 0;
+    }
+
+    .snapshot-value {
+      display: block;
+      margin-bottom: 9px;
+      color: var(--purple-dark);
+      font-family: var(--font-reading);
+      font-size: 38px;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+
+    .snapshot-label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 650;
+      line-height: 1.45;
+    }
+
+    .snapshot-note {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .section {
+      padding: 86px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-heading {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.52fr) minmax(0, 1.25fr);
+      gap: 54px;
+      margin-bottom: 44px;
+      align-items: start;
+    }
+
+    .section-index {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--purple);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin-bottom: 0;
+      font-family: var(--font-reading);
+      font-size: clamp(30px, 4vw, 48px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+    }
+
+    .section-intro {
+      max-width: 700px;
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.8;
+    }
+
+    .achievement-grid,
+    .feature-grid,
+    .challenge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--paper);
+    }
+
+    .card-number,
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-bottom: 22px;
+      border-radius: 10px;
+      color: var(--purple-dark);
+      background: var(--purple-soft);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+      font-size: 19px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .card p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .feature-card {
+      min-height: 270px;
+    }
+
+    .feature-card:nth-child(2) .card-icon {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .feature-card:nth-child(3) .card-icon {
+      color: var(--blue);
+      background: var(--blue-soft);
+    }
+
+    .feature-card:nth-child(4) .card-icon {
+      color: var(--orange);
+      background: var(--orange-soft);
+    }
+
+    .feature-list {
+      padding: 0;
+      margin: 16px 0 0;
+      list-style: none;
+    }
+
+    .feature-list li {
+      position: relative;
+      margin-bottom: 8px;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .feature-list li::before {
+      content: "";
+      position: absolute;
+      top: 0.7em;
+      left: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--purple);
+    }
+
+    .architecture {
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: #25212c;
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .architecture-lane {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .architecture-step {
+      position: relative;
+      min-height: 158px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .architecture-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -13px;
+      z-index: 2;
+      width: 14px;
+      color: #bba8ff;
+      font-weight: 700;
+      text-align: center;
+      transform: translateY(-50%);
+    }
+
+    .architecture-label {
+      display: block;
+      margin-bottom: 11px;
+      color: #bba8ff;
+      font: 700 11px/1.3 var(--font-ui);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .architecture-step strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .architecture-step p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.66);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .architecture-return {
+      display: grid;
+      grid-template-columns: 1.35fr 0.8fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .architecture-band {
+      padding: 16px 18px;
+      border-radius: 12px;
+      background: rgba(187, 168, 255, 0.09);
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .architecture-band strong {
+      display: block;
+      margin-bottom: 3px;
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .architecture-caption {
+      max-width: 820px;
+      margin: 22px 0 0;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 13px;
+    }
+
+    .challenge-card {
+      min-height: 265px;
+      border-top: 4px solid var(--purple);
+    }
+
+    .challenge-card:nth-child(2),
+    .challenge-card:nth-child(5) {
+      border-top-color: #e79b36;
+    }
+
+    .challenge-card:nth-child(3),
+    .challenge-card:nth-child(6) {
+      border-top-color: #2a9f76;
+    }
+
+    .challenge-tag {
+      display: inline-block;
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .challenge-card h3 {
+      font-family: var(--font-reading);
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      padding-top: 12px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      top: 26px;
+      right: 8%;
+      left: 8%;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding: 46px 22px 0;
+      text-align: center;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      width: 36px;
+      height: 36px;
+      border: 9px solid var(--canvas);
+      border-radius: 50%;
+      background: var(--purple);
+      transform: translateX(-50%);
+    }
+
+    .timeline-date {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--purple-dark);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .timeline-item h3 {
+      margin-bottom: 7px;
+      font-size: 17px;
+    }
+
+    .timeline-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .operations-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    .operations-panel {
+      padding: 30px;
+      border-radius: var(--radius-lg);
+    }
+
+    .operations-panel.safe {
+      border: 1px solid #cce8da;
+      background: var(--green-soft);
+    }
+
+    .operations-panel.honest {
+      border: 1px solid #eed9bf;
+      background: var(--orange-soft);
+    }
+
+    .operations-panel h3 {
+      margin-bottom: 14px;
+      font-family: var(--font-reading);
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .operations-panel ul {
+      padding-left: 20px;
+      margin: 0;
+    }
+
+    .operations-panel li {
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .resource-link {
+      display: block;
+      min-height: 185px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--paper);
+      text-decoration: none;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .resource-link:hover {
+      border-color: rgba(110, 63, 243, 0.42);
+      box-shadow: 0 14px 32px rgba(34, 23, 55, 0.09);
+      transform: translateY(-2px);
+    }
+
+    .resource-type {
+      display: block;
+      margin-bottom: 28px;
+      color: var(--purple);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .resource-link strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .resource-link span:last-child {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .closing {
+      padding: 94px 0;
+      text-align: center;
+    }
+
+    .closing blockquote {
+      max-width: 850px;
+      margin: 0 auto 28px;
+      font-family: var(--font-reading);
+      font-size: clamp(26px, 3.8vw, 44px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.45;
+    }
+
+    .closing p {
+      max-width: 680px;
+      margin: 0 auto;
+      color: var(--muted);
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      background: var(--paper);
+    }
+
+    .footer-inner {
+      min-height: 112px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .footer-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 18px;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .footer-links a:hover {
+      color: var(--purple-dark);
+    }
+
+    @media (max-width: 980px) {
+      .nav {
+        display: none;
+      }
+
+      .hero-grid,
+      .section-heading {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+
+      .hero-grid {
+        align-items: start;
+      }
+
+      .launch-card {
+        max-width: 560px;
+      }
+
+      .snapshot-grid,
+      .achievement-grid,
+      .feature-grid,
+      .challenge-grid,
+      .resource-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .snapshot-item:nth-child(2) {
+        border-right: 0;
+      }
+
+      .snapshot-item:nth-child(-n + 2) {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .architecture-lane {
+        grid-template-columns: 1fr;
+      }
+
+      .architecture-step {
+        min-height: auto;
+      }
+
+      .architecture-step:not(:last-child)::after {
+        content: "↓";
+        top: auto;
+        right: auto;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .architecture-return {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .shell {
+        width: min(calc(100% - 28px), var(--page-max));
+      }
+
+      .topbar-inner {
+        min-height: 62px;
+      }
+
+      .brand-name,
+      .brand-divider {
+        display: none;
+      }
+
+      .top-actions {
+        gap: 8px;
+      }
+
+      .hero {
+        padding: 62px 0 44px;
+      }
+
+      .hero::before {
+        opacity: 0.6;
+      }
+
+      h1 {
+        font-size: clamp(38px, 13vw, 58px);
+      }
+
+      .hero-lead {
+        font-size: 18px;
+      }
+
+      .hero-actions .button {
+        width: 100%;
+      }
+
+      .snapshot {
+        padding-bottom: 58px;
+      }
+
+      .snapshot-grid,
+      .achievement-grid,
+      .feature-grid,
+      .challenge-grid,
+      .operations-grid,
+      .resource-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .snapshot-item {
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .snapshot-item:last-child {
+        border-bottom: 0;
+      }
+
+      .section {
+        padding: 62px 0;
+      }
+
+      .section-heading {
+        margin-bottom: 32px;
+      }
+
+      .card,
+      .operations-panel,
+      .architecture {
+        padding: 22px;
+      }
+
+      .timeline {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding-left: 18px;
+      }
+
+      .timeline::before {
+        top: 15px;
+        right: auto;
+        bottom: 15px;
+        left: 25px;
+        width: 1px;
+        height: auto;
+      }
+
+      .timeline-item {
+        padding: 0 0 0 52px;
+        text-align: left;
+      }
+
+      .timeline-dot {
+        top: 0;
+        left: 8px;
+        border-color: var(--canvas);
+        transform: none;
+      }
+
+      .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 28px 0;
+      }
+
+      .footer-links {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
 </head>
-<body>
-<div class="page">
-
-<div class="brand">
-  <a href="https://matters.town" aria-label="Matters" style="display:inline-flex">
-    <img class="logo" src="static/matters-logo.svg" alt="Matters" height="24">
+<body data-lang="zh">
+  <a class="skip-link" href="#main">
+    <span data-copy="zh">跳到主要內容</span>
+    <span data-copy="en" hidden>Skip to content</span>
   </a>
-  <span class="divider">/</span>
-  <span class="product">Fediverse Gateway</span>
-</div>
 
-<header class="hero">
-  <span class="badge">Functional demo · in development</span>
-  <h1>Bring Matters long-form publishing into the Fediverse.</h1>
-  <p class="subtitle">A small, inspectable gateway for Mastodon, Misskey, GoToSocial, and other ActivityPub implementations to discover, read, follow, and interact with public Matters articles.</p>
-  <p class="demo-note">This page uses Matters main-site publishing as the case study. It links to a live Cloudflare Worker ActivityPub demo, static prototype endpoints, and the repo-backed plan for moving real public Matters articles into a non-production gateway. Source code is available in the <a href="https://github.com/thematters/matters-fediverse-gateway">GitHub repository</a>.</p>
-</header>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="https://matters.town" aria-label="Matters">
+        <img src="static/matters-logo.svg" alt="Matters">
+        <span class="brand-divider" aria-hidden="true"></span>
+        <span class="brand-name">Fediverse Gateway</span>
+      </a>
 
-<section>
-  <h2>What it is</h2>
-  <p>Matters is a long-running, open-source, interoperable IPFS-protocol publishing site and censorship-resistant community-governance platform with more than 280,000 registered users. The Fediverse is an open social network of interoperable servers and applications, including Mastodon, Misskey, GoToSocial, Threads, and others.</p>
-  <p>Matters Fediverse Gateway connects those two worlds. It lets Fediverse users follow Matters publishing, read full public long-form articles as ActivityPub <code>Article</code> objects, reply, like, and boost. Those interactions can flow back into Matters. Paid articles, encrypted articles, private content, and messages stay outside federation.</p>
-</section>
+      <div class="top-actions">
+        <nav class="nav" aria-label="Page">
+          <a href="#achievements">
+            <span data-copy="zh">成就</span>
+            <span data-copy="en" hidden>Achievements</span>
+          </a>
+          <a href="#architecture">
+            <span data-copy="zh">架構</span>
+            <span data-copy="en" hidden>Architecture</span>
+          </a>
+          <a href="#challenges">
+            <span data-copy="zh">開發挑戰</span>
+            <span data-copy="en" hidden>Challenges</span>
+          </a>
+          <a href="#resources">
+            <span data-copy="zh">文件</span>
+            <span data-copy="en" hidden>Resources</span>
+          </a>
+        </nav>
 
-<section>
-  <h2>Matters main-site flow</h2>
-  <p>The concrete case is the Matters main site. A public article starts on <code>matters.town</code>, moves through the IPFS/IPNS-oriented static publisher, becomes an ActivityPub seed bundle, and is then canonicalized by the gateway for discovery and interaction.</p>
-  <div class="flow" aria-label="Matters publishing to Fediverse flow">
-    <div class="flow-step">
-      <span class="flow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg></span>
-      <h3>Matters public article</h3>
-      <p>Author publishes a public long-form article on <code>matters.town</code>.</p>
+        <div class="language-switch" role="group" aria-label="Language">
+          <button type="button" data-set-lang="zh" aria-pressed="true">正體</button>
+          <button type="button" data-set-lang="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
     </div>
-    <div class="flow-step">
-      <span class="flow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg></span>
-      <h3>IPNS static output</h3>
-      <p><code>ipns-site-generator</code> emits durable public article files and feeds.</p>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="shell hero-grid">
+        <div data-copy="zh">
+          <div class="eyebrow"><span class="eyebrow-dot"></span>正式上線 · 2026 年 7 月</div>
+          <h1>文章走進<br>聯邦宇宙</h1>
+          <p class="hero-lead">
+            Matters 已完成 Fediverse 正式整合。作者仍在熟悉的地方寫作，
+            新發佈的公開文章可以被 Threads、Mastodon、Misskey 等聯邦服務發現、追蹤與互動。
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="https://matters.town/me/settings/misc">開啟聯邦發佈</a>
+            <a class="button secondary" href="https://github.com/thematters/matters-fediverse-gateway/blob/main/docs/production-launch-comms-zh-TW.md">閱讀啟用教學</a>
+          </div>
+        </div>
+
+        <div data-copy="en" hidden>
+          <div class="eyebrow"><span class="eyebrow-dot"></span>Production · July 2026</div>
+          <h1>Long-form writing,<br>now federated</h1>
+          <p class="hero-lead">
+            Matters has completed its production Fediverse integration. Authors keep writing where they always have,
+            while new public articles can be discovered, followed, and discussed from Threads, Mastodon, Misskey, and other federated services.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="https://matters.town/me/settings/misc">Enable federation</a>
+            <a class="button secondary" href="https://github.com/thematters/matters-fediverse-gateway">View the source</a>
+          </div>
+        </div>
+
+        <aside class="launch-card">
+          <div data-copy="zh">
+            <div class="launch-card-kicker">Project milestone</div>
+            <strong>正式開放</strong>
+            <p>核心建置階段完成，進入公開維運與持續改善。</p>
+            <div class="launch-card-rule"></div>
+            <dl class="launch-card-meta">
+              <div><dt>作者範圍</dt><dd>所有活躍作者</dd></div>
+              <div><dt>預設狀態</dt><dd>由作者主動開啟</dd></div>
+              <div><dt>內容邊界</dt><dd>僅限公開文章</dd></div>
+              <div><dt>正式驗收</dt><dd>2026-07-25</dd></div>
+            </dl>
+          </div>
+          <div data-copy="en" hidden>
+            <div class="launch-card-kicker">Project milestone</div>
+            <strong>Generally available</strong>
+            <p>The core build is complete. The project now moves into public operations and continuous improvement.</p>
+            <div class="launch-card-rule"></div>
+            <dl class="launch-card-meta">
+              <div><dt>Authors</dt><dd>All active authors</dd></div>
+              <div><dt>Default</dt><dd>Author opt-in</dd></div>
+              <div><dt>Content boundary</dt><dd>Public articles only</dd></div>
+              <div><dt>Acceptance</dt><dd>2026-07-25</dd></div>
+            </dl>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="snapshot" aria-label="Launch snapshot">
+      <div class="shell">
+        <div class="snapshot-grid">
+          <div class="snapshot-item">
+            <span class="snapshot-value">100%</span>
+            <span class="snapshot-label" data-copy="zh">活躍作者可使用</span>
+            <span class="snapshot-label" data-copy="en" hidden>of active authors eligible</span>
+            <span class="snapshot-note" data-copy="zh">帳號層級主動開啟，文章層級可個別調整</span>
+            <span class="snapshot-note" data-copy="en" hidden>Account opt-in with per-article control</span>
+          </div>
+          <div class="snapshot-item">
+            <span class="snapshot-value">3</span>
+            <span class="snapshot-label" data-copy="zh">主要生態完成實讀</span>
+            <span class="snapshot-label" data-copy="en" hidden>ecosystems read back</span>
+            <span class="snapshot-note">Mastodon · Threads · Misskey</span>
+          </div>
+          <div class="snapshot-item">
+            <span class="snapshot-value">9/9</span>
+            <span class="snapshot-label" data-copy="zh">正式警報狀態正常</span>
+            <span class="snapshot-label" data-copy="en" hidden>production alarms healthy</span>
+            <span class="snapshot-note" data-copy="zh">正式驗收當下的 CloudWatch 快照</span>
+            <span class="snapshot-note" data-copy="en" hidden>CloudWatch snapshot at launch acceptance</span>
+          </div>
+          <div class="snapshot-item">
+            <span class="snapshot-value">0</span>
+            <span class="snapshot-label" data-copy="zh">待處理與未結案死信</span>
+            <span class="snapshot-label" data-copy="en" hidden>pending and open dead letters</span>
+            <span class="snapshot-note" data-copy="zh">正式驗收當下的佇列快照</span>
+            <span class="snapshot-note" data-copy="en" hidden>Queue snapshot at launch acceptance</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="achievements">
+      <div class="shell">
+        <div data-copy="zh">
+          <div class="section-heading">
+            <div>
+              <span class="section-index">01 · 成就</span>
+              <h2>從概念驗證<br>走到正式服務</h2>
+            </div>
+            <p class="section-intro">
+              這個計畫把 Matters 的長文發佈能力接上開放的 ActivityPub 網路，
+              同時維持作者選擇權、公開內容邊界、原文網址與既有寫作流程。
+            </p>
+          </div>
+
+          <div class="achievement-grid">
+            <article class="card">
+              <span class="card-number">01</span>
+              <h3>一般作者正式開放</h3>
+              <p>所有活躍作者都能在設定中開啟聯邦發佈。功能預設關閉，作者可以在每篇文章再次選擇是否送出。</p>
+            </article>
+            <article class="card">
+              <span class="card-number">02</span>
+              <h3>文章生命週期完整同步</h3>
+              <p>新文章送出 Create，修改文章送出 Update，封存或關閉聯邦發佈時送出 Delete，並維持穩定的文章物件識別。</p>
+            </article>
+            <article class="card">
+              <span class="card-number">03</span>
+              <h3>跨服務身分可以被找到</h3>
+              <p>每位啟用作者都有 <code>@帳號@matters.town</code> 聯邦身分，包含名稱、個人頁、頭像、收件匣與文章列表。</p>
+            </article>
+            <article class="card">
+              <span class="card-number">04</span>
+              <h3>Threads 長文相容層</h3>
+              <p>保留 Article 為主要物件，並只對 Threads 加送相容的 Note，讓遠端動態牆顯示文章並連回 Matters 原文。</p>
+            </article>
+            <article class="card">
+              <span class="card-number">05</span>
+              <h3>雙向社交協定</h3>
+              <p>Gateway 能處理追蹤、回覆、喜歡、轉發與取消等 ActivityPub 活動，並保存必要的跨站互動狀態。</p>
+            </article>
+            <article class="card">
+              <span class="card-number">06</span>
+              <h3>正式維運能力</h3>
+              <p>投遞佇列、重試、死信、備份、監控、告警、管理介面、回滾與客服文件已成為正式服務的一部分。</p>
+            </article>
+          </div>
+        </div>
+
+        <div data-copy="en" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-index">01 · Achievements</span>
+              <h2>From proof of concept<br>to production</h2>
+            </div>
+            <p class="section-intro">
+              The project connects Matters' long-form publishing system to the open ActivityPub network
+              while preserving author choice, public-content boundaries, canonical article URLs, and the existing writing workflow.
+            </p>
+          </div>
+
+          <div class="achievement-grid">
+            <article class="card">
+              <span class="card-number">01</span>
+              <h3>General-author access</h3>
+              <p>Every active author can enable federation in settings. It is off by default, with an additional per-article delivery choice.</p>
+            </article>
+            <article class="card">
+              <span class="card-number">02</span>
+              <h3>Complete article lifecycle</h3>
+              <p>New articles emit Create, revisions emit Update, and archives or opt-outs emit Delete while retaining stable object identity.</p>
+            </article>
+            <article class="card">
+              <span class="card-number">03</span>
+              <h3>Discoverable author identity</h3>
+              <p>Each opted-in author receives an <code>@handle@matters.town</code> identity with name, profile, avatar, inbox, and outbox.</p>
+            </article>
+            <article class="card">
+              <span class="card-number">04</span>
+              <h3>Threads long-form adapter</h3>
+              <p>Article remains the primary object. A receiver-scoped Note companion makes the post visible in Threads and links back to the Matters original.</p>
+            </article>
+            <article class="card">
+              <span class="card-number">05</span>
+              <h3>Bidirectional social protocol</h3>
+              <p>The gateway handles follows, replies, likes, boosts, and undo activities while retaining the cross-server interaction state needed for recovery.</p>
+            </article>
+            <article class="card">
+              <span class="card-number">06</span>
+              <h3>Production operations</h3>
+              <p>Queues, retries, dead letters, backups, monitoring, alerts, admin controls, rollback, and support guidance are now part of the service.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="shell">
+        <div data-copy="zh">
+          <div class="section-heading">
+            <div>
+              <span class="section-index">02 · 功能</span>
+              <h2>寫作不變<br>抵達的地方更多</h2>
+            </div>
+            <p class="section-intro">
+              作者不需要理解 ActivityPub，也不需要經營另一個後台。
+              聯邦發佈直接融入 Matters 的帳號設定、發文、修改與封存流程。
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="card feature-card">
+              <span class="card-icon">作</span>
+              <h3>作者控制</h3>
+              <p>聯邦發佈由作者主動開啟，每篇文章仍能獨立決定。</p>
+              <ul class="feature-list">
+                <li>帳號層級 opt-in</li>
+                <li>文章層級繼承、開啟或關閉</li>
+                <li>既有文章不會自動整批補送</li>
+              </ul>
+            </article>
+            <article class="card feature-card">
+              <span class="card-icon">文</span>
+              <h3>文章同步</h3>
+              <p>新公開文章會自動投遞，修改與封存也沿用同一個物件身分。</p>
+              <ul class="feature-list">
+                <li>Create、Update、Delete</li>
+                <li>保留 Matters 原文網址</li>
+                <li>Threads 專用 Note 相容層</li>
+              </ul>
+            </article>
+            <article class="card feature-card">
+              <span class="card-icon">聯</span>
+              <h3>發現與互動</h3>
+              <p>讀者可以從原本使用的聯邦服務搜尋作者、追蹤與閱讀文章。</p>
+              <ul class="feature-list">
+                <li>WebFinger 與 NodeInfo</li>
+                <li>作者頭像、個人頁與 outbox</li>
+                <li>追蹤、回覆、喜歡、轉發與取消</li>
+              </ul>
+            </article>
+            <article class="card feature-card">
+              <span class="card-icon">守</span>
+              <h3>內容邊界</h3>
+              <p>在內容離開 Matters 前，來源端就會完成嚴格資格判斷。</p>
+              <ul class="feature-list">
+                <li>只投遞公開文章</li>
+                <li>排除草稿、付費、圍爐與封存內容</li>
+                <li>遠端副本與刪除限制清楚告知</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+
+        <div data-copy="en" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-index">02 · Features</span>
+              <h2>Same writing flow<br>broader reach</h2>
+            </div>
+            <p class="section-intro">
+              Authors do not need to understand ActivityPub or operate another publishing console.
+              Federation lives inside the existing Matters settings, publish, revise, and archive flows.
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="card feature-card">
+              <span class="card-icon">A</span>
+              <h3>Author control</h3>
+              <p>Federation is an explicit author choice, and each article remains independently configurable.</p>
+              <ul class="feature-list">
+                <li>Account-level opt-in</li>
+                <li>Per-article inherit, enable, or disable</li>
+                <li>No automatic bulk backfill of older work</li>
+              </ul>
+            </article>
+            <article class="card feature-card">
+              <span class="card-icon">P</span>
+              <h3>Article synchronization</h3>
+              <p>New public articles are delivered automatically. Revisions and archives retain the same object identity.</p>
+              <ul class="feature-list">
+                <li>Create, Update, and Delete</li>
+                <li>Canonical Matters article URL</li>
+                <li>Threads-scoped Note compatibility</li>
+              </ul>
+            </article>
+            <article class="card feature-card">
+              <span class="card-icon">F</span>
+              <h3>Discovery and interaction</h3>
+              <p>Readers can find and follow Matters authors from the federated services they already use.</p>
+              <ul class="feature-list">
+                <li>WebFinger and NodeInfo</li>
+                <li>Avatar, profile, and outbox</li>
+                <li>Follow, reply, like, boost, and undo</li>
+              </ul>
+            </article>
+            <article class="card feature-card">
+              <span class="card-icon">S</span>
+              <h3>Content boundaries</h3>
+              <p>Strict source-side eligibility runs before any content can leave Matters.</p>
+              <ul class="feature-list">
+                <li>Public articles only</li>
+                <li>Draft, paid, circle, and archived content excluded</li>
+                <li>Clear remote-copy and deletion disclosure</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="architecture">
+      <div class="shell">
+        <div data-copy="zh">
+          <div class="section-heading">
+            <div>
+              <span class="section-index">03 · 架構</span>
+              <h2>把核心系統與<br>聯邦協定解耦</h2>
+            </div>
+            <p class="section-intro">
+              Matters 保留產品權限與文章資料的決策權。非同步匯出、靜態內容建置、
+              ActivityPub 身分、簽章、投遞與互動狀態由各自清楚的服務負責。
+            </p>
+          </div>
+        </div>
+
+        <div data-copy="en" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-index">03 · Architecture</span>
+              <h2>Decoupling the product<br>from the protocol</h2>
+            </div>
+            <p class="section-intro">
+              Matters remains authoritative for product permissions and article data.
+              Asynchronous export, static bundle generation, ActivityPub identity, signing, delivery, and social state have explicit owners.
+            </p>
+          </div>
+        </div>
+
+        <div class="architecture">
+          <div class="architecture-lane">
+            <div class="architecture-step">
+              <span class="architecture-label">01 · Product</span>
+              <strong>Matters Web + Server</strong>
+              <p data-copy="zh">作者設定、文章選擇、公開資格與生命週期事件</p>
+              <p data-copy="en" hidden>Author controls, article choice, public eligibility, and lifecycle events</p>
+            </div>
+            <div class="architecture-step">
+              <span class="architecture-label">02 · Queue</span>
+              <strong>Amazon SQS FIFO</strong>
+              <p data-copy="zh">有順序、可重試、可觀察的非同步交接</p>
+              <p data-copy="en" hidden>Ordered, retryable, and observable asynchronous handoff</p>
+            </div>
+            <div class="architecture-step">
+              <span class="architecture-label">03 · Export</span>
+              <strong>Lambda + Generator</strong>
+              <p data-copy="zh">重新確認公開邊界，產生標準化 ActivityPub bundle</p>
+              <p data-copy="en" hidden>Recheck public boundaries and build a normalized ActivityPub bundle</p>
+            </div>
+            <div class="architecture-step">
+              <span class="architecture-label">04 · Gateway</span>
+              <strong>gateway-core</strong>
+              <p data-copy="zh">身分、簽章、追蹤者、投遞、互動、佇列與持久狀態</p>
+              <p data-copy="en" hidden>Identity, signatures, followers, delivery, interactions, queues, and durable state</p>
+            </div>
+            <div class="architecture-step">
+              <span class="architecture-label">05 · Network</span>
+              <strong>Fediverse</strong>
+              <p>Mastodon · Threads · Misskey · ActivityPub</p>
+            </div>
+          </div>
+
+          <div class="architecture-return">
+            <div class="architecture-band">
+              <strong>Cloudflare Worker</strong>
+              <span data-copy="zh">只接管 WebFinger、NodeInfo、actor、object 與 inbox 等聯邦路徑，Matters 主站維持原有服務。</span>
+              <span data-copy="en" hidden>Routes only WebFinger, NodeInfo, actor, object, and inbox traffic while the main Matters site remains unchanged.</span>
+            </div>
+            <div class="architecture-band">
+              <strong>SQLite + Backup</strong>
+              <span data-copy="zh">保存 actor、追蹤、投遞、互動與稽核狀態，並定期離線備份。</span>
+              <span data-copy="en" hidden>Persists actor, follow, delivery, interaction, and audit state with scheduled offline backup.</span>
+            </div>
+            <div class="architecture-band">
+              <strong>Operations</strong>
+              <span data-copy="zh">CloudWatch、計時器、管理介面、重送、結案與回滾。</span>
+              <span data-copy="en" hidden>CloudWatch, timers, admin tools, replay, resolution, and rollback.</span>
+            </div>
+          </div>
+
+          <p class="architecture-caption" data-copy="zh">
+            發文路徑由左至右。遠端搜尋、讀取、追蹤與互動則透過 Cloudflare Worker 回到 gateway-core。
+            出站與入站共享同一套 actor 身分、簽章與稽核狀態。
+          </p>
+          <p class="architecture-caption" data-copy="en" hidden>
+            Publishing flows from left to right. Remote discovery, reads, follows, and interactions return through the Cloudflare Worker to gateway-core.
+            Inbound and outbound traffic share the same actor identity, signatures, and audit state.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="challenges">
+      <div class="shell">
+        <div data-copy="zh">
+          <div class="section-heading">
+            <div>
+              <span class="section-index">04 · 撞到的牆</span>
+              <h2>協定相同<br>行為仍然不同</h2>
+            </div>
+            <p class="section-intro">
+              ActivityPub 提供共同語言，但真正的互通發生在服務實作、網路安全、
+              快取、內容模型與維運習慣的交界。以下是正式上線前最重要的六道牆。
+            </p>
+          </div>
+
+          <div class="challenge-grid">
+            <article class="card challenge-card">
+              <span class="challenge-tag">Discovery</span>
+              <h3>看得到路由，不代表找得到帳號</h3>
+              <p>WebFinger、NodeInfo、actor 與個人頁必須彼此一致。Cloudflare 挑戰規則曾攔下遠端伺服器，Threads 能找到帳號時，Mastodon 仍可能完全查無結果。</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Compatibility</span>
+              <h3>Article 並非每個動態牆都會顯示</h3>
+              <p>Threads 能解析身分，卻不一定把長文 Article 放進動態牆。最後保留標準 Article，再為 Threads 加上限縮接收端的 Note companion。</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Identity</span>
+              <h3>識別、頭像與金鑰都有快取</h3>
+              <p>遠端會快取 actor、頭像、公開金鑰與 object。修正資料後不一定立即可見，金鑰版本、canonical URL 與 profile URL 必須從一開始就穩定。</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Lifecycle</span>
+              <h3>刪除必須指向同一個物件</h3>
+              <p>Create、Update 與 Delete 只要有一次 object ID 漂移，遠端就可能留下舊文章。最後一個正式修正就是讓封存事件永遠使用原始 Article canonical ID。</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Reliability</span>
+              <h3>部署成功不等於遠端收到</h3>
+              <p>Lambda、SQS 與 Gateway 健康，只能證明本地管線運作。真正驗收還要確認投遞回應、遠端畫面、修改結果與刪除結果，並將重試與死信分開處理。</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Network safety</span>
+              <h3>安全防護也可能擋住正常聯邦流量</h3>
+              <p>SSRF 防護、未知 ASN、IPv4-mapped IPv6 與接收端網路行為曾造成真實投遞失敗。最後採用窄路由例外、嚴格目的地驗證與可觀察重試。</p>
+            </article>
+          </div>
+        </div>
+
+        <div data-copy="en" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-index">04 · Walls we hit</span>
+              <h2>One protocol<br>many behaviors</h2>
+            </div>
+            <p class="section-intro">
+              ActivityPub provides a shared language, but real interoperability lives at the boundaries between implementations,
+              network security, caches, content models, and operations. Six walls defined the path to production.
+            </p>
+          </div>
+
+          <div class="challenge-grid">
+            <article class="card challenge-card">
+              <span class="challenge-tag">Discovery</span>
+              <h3>A working route does not guarantee discovery</h3>
+              <p>WebFinger, NodeInfo, actor documents, and profile pages must agree. Cloudflare challenges once blocked remote servers, and Mastodon could still fail discovery after Threads found the same account.</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Compatibility</span>
+              <h3>Not every feed renders Article</h3>
+              <p>Threads could resolve an actor without placing its long-form Article in the feed. The final design preserves the standard Article and adds a receiver-scoped Note companion for Threads.</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Identity</span>
+              <h3>Identity, avatars, and keys are cached</h3>
+              <p>Remote servers cache actors, avatars, public keys, and objects. Corrections are rarely instant, so key versions, canonical URLs, and profile URLs must remain stable from the start.</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Lifecycle</span>
+              <h3>Delete must reference the same object</h3>
+              <p>Any object-ID drift across Create, Update, and Delete can leave an old article visible. The final production fix made archive events preserve the original canonical Article ID.</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Reliability</span>
+              <h3>A healthy deployment is not remote delivery</h3>
+              <p>Healthy Lambda, SQS, and gateway services prove only the local pipeline. Acceptance also required delivery responses, remote UI readback, update visibility, deletion visibility, retries, and dead-letter review.</p>
+            </article>
+            <article class="card challenge-card">
+              <span class="challenge-tag">Network safety</span>
+              <h3>Security controls can block valid federation</h3>
+              <p>SSRF protection, unknown ASNs, IPv4-mapped IPv6, and receiver networking behavior caused real delivery failures. Narrow route exceptions, strict destination checks, and observable retries resolved the conflict.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="timeline">
+      <div class="shell">
+        <div data-copy="zh">
+          <div class="section-heading">
+            <div>
+              <span class="section-index">05 · 歷程</span>
+              <h2>三個月的<br>互通與收斂</h2>
+            </div>
+            <p class="section-intro">
+              計畫從公開研究與 demo 開始，逐步經過真實服務互通、正式資料管線、
+              Threads 相容、社交活動、監控與完整文章生命週期驗收。
+            </p>
+          </div>
+
+          <div class="timeline">
+            <article class="timeline-item">
+              <span class="timeline-dot"></span>
+              <span class="timeline-date">2026 · 04</span>
+              <h3>公開原型</h3>
+              <p>建立 gateway、WebFinger、actor、outbox 與 Cloudflare edge demo，完成 g0v.social 初次發現。</p>
+            </article>
+            <article class="timeline-item">
+              <span class="timeline-dot"></span>
+              <span class="timeline-date">2026 · 05</span>
+              <h3>真實內容與多服務互通</h3>
+              <p>接上 Matters 公開文章資料，完成 Mastodon、Misskey 的發現、追蹤、文章顯示與互動驗證。</p>
+            </article>
+            <article class="timeline-item">
+              <span class="timeline-dot"></span>
+              <span class="timeline-date">2026 · 06</span>
+              <h3>Threads 相容與正式試投</h3>
+              <p>修正 Article 物件形狀與公開路由，完成 Threads 可見 Note、原文連結、追蹤與 Like 回傳。</p>
+            </article>
+            <article class="timeline-item">
+              <span class="timeline-dot"></span>
+              <span class="timeline-date">2026 · 07</span>
+              <h3>正式開放</h3>
+              <p>一般作者、修改刪除、雙向互動、重試、監控、備份、on-call 與跨服務實讀全部完成。</p>
+            </article>
+          </div>
+        </div>
+
+        <div data-copy="en" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-index">05 · Timeline</span>
+              <h2>Three months of<br>interoperability work</h2>
+            </div>
+            <p class="section-intro">
+              The project began as public research and a demo, then progressed through real-server interoperability,
+              production data plumbing, Threads compatibility, social activities, monitoring, and full article-lifecycle acceptance.
+            </p>
+          </div>
+
+          <div class="timeline">
+            <article class="timeline-item">
+              <span class="timeline-dot"></span>
+              <span class="timeline-date">Apr · 2026</span>
+              <h3>Public prototype</h3>
+              <p>Built the gateway, WebFinger, actor, outbox, and Cloudflare edge demo, then passed initial g0v.social discovery.</p>
+            </article>
+            <article class="timeline-item">
+              <span class="timeline-dot"></span>
+              <span class="timeline-date">May · 2026</span>
+              <h3>Real content, multiple servers</h3>
+              <p>Connected real public Matters data and verified discovery, follow, Article display, and interactions on Mastodon and Misskey.</p>
+            </article>
+            <article class="timeline-item">
+              <span class="timeline-dot"></span>
+              <span class="timeline-date">Jun · 2026</span>
+              <h3>Threads compatibility and pilot</h3>
+              <p>Corrected the Article shape and public routes, then verified a visible Threads Note, canonical link, follow, and returned Like.</p>
+            </article>
+            <article class="timeline-item">
+              <span class="timeline-dot"></span>
+              <span class="timeline-date">Jul · 2026</span>
+              <h3>General availability</h3>
+              <p>Completed general-author access, update and delete, social activities, retries, monitoring, backup, on-call, and remote readback.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="operations">
+      <div class="shell">
+        <div data-copy="zh">
+          <div class="section-heading">
+            <div>
+              <span class="section-index">06 · 正式維運</span>
+              <h2>完成建置<br>保留清醒</h2>
+            </div>
+            <p class="section-intro">
+              正式上線代表核心範圍已通過驗收。聯邦宇宙仍由許多獨立服務組成，
+              因此維運設計同時包含可靠投遞、可回滾性與對遠端能力邊界的誠實說明。
+            </p>
+          </div>
+
+          <div class="operations-grid">
+            <article class="operations-panel safe">
+              <h3>我們能控制的部分</h3>
+              <ul>
+                <li>內容離開 Matters 前的公開資格與作者選擇</li>
+                <li>有順序的佇列、部分批次失敗、五分鐘重試與死信結案</li>
+                <li>Gateway 心跳、備份、Lambda、SQS、EC2 與投遞年齡告警</li>
+                <li>管理介面的查詢、重送、結案、稽核與安全回滾</li>
+                <li>客服窗口 <strong>hi@matters.town</strong> 與事件分級文件</li>
+              </ul>
+            </article>
+            <article class="operations-panel honest">
+              <h3>遠端服務決定的部分</h3>
+              <ul>
+                <li>第一次建立帳號索引與文章出現的時間</li>
+                <li>排版、摘要、圖片與長文物件的顯示方式</li>
+                <li>修改事件何時反映在既有快取</li>
+                <li>刪除請求何時處理，以及快取、備份與轉發副本是否保留</li>
+                <li>Threads 等服務逐步開放的遠端回覆與分享介面</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+
+        <div data-copy="en" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-index">06 · Operations</span>
+              <h2>Build complete<br>eyes open</h2>
+            </div>
+            <p class="section-intro">
+              Production means the core scope has passed acceptance. The Fediverse is still made of independent services,
+              so operations must combine reliable delivery, safe rollback, and clear disclosure of receiver-side limits.
+            </p>
+          </div>
+
+          <div class="operations-grid">
+            <article class="operations-panel safe">
+              <h3>What Matters controls</h3>
+              <ul>
+                <li>Public eligibility and author choice before content leaves Matters</li>
+                <li>Ordered queues, partial-batch failures, five-minute retries, and dead-letter resolution</li>
+                <li>Alerts for gateway heartbeat, backup, Lambda, SQS, EC2, and delivery age</li>
+                <li>Admin inspection, replay, resolution, audit, and safe rollback</li>
+                <li>Support through <strong>hi@matters.town</strong> with incident severity guidance</li>
+              </ul>
+            </article>
+            <article class="operations-panel honest">
+              <h3>What remote services control</h3>
+              <ul>
+                <li>When a new remote account or article is indexed</li>
+                <li>How long-form objects, summaries, images, and layout are rendered</li>
+                <li>When an Update appears through existing caches</li>
+                <li>When Delete is processed and whether caches, backups, or boosts remain</li>
+                <li>Phased availability of remote reply and share interfaces on services such as Threads</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="resources">
+      <div class="shell">
+        <div data-copy="zh">
+          <div class="section-heading">
+            <div>
+              <span class="section-index">07 · 文件與原始碼</span>
+              <h2>公開、可查<br>可以繼續演進</h2>
+            </div>
+            <p class="section-intro">
+              Gateway 以 AGPL-3.0 開源。產品說明、正式維運文件、技術決策、
+              互通紀錄與完整原始碼都保留在公開 repository。
+            </p>
+          </div>
+
+          <div class="resource-grid">
+            <a class="resource-link" href="https://github.com/thematters/matters-fediverse-gateway/blob/main/docs/production-launch-comms-zh-TW.md">
+              <span class="resource-type">作者文件</span>
+              <strong>啟用教學與常見問題</strong>
+              <span>如何開啟、哪些文章會送出、Threads 提醒與遠端副本說明。</span>
+            </a>
+            <a class="resource-link" href="https://github.com/thematters/matters-fediverse-gateway">
+              <span class="resource-type">Open source</span>
+              <strong>原始碼與研究紀錄</strong>
+              <span>Gateway、Worker、規格、ADR、互通證據、測試與完整開發歷程。</span>
+            </a>
+            <a class="resource-link" href="https://github.com/thematters/matters-fediverse-gateway/blob/main/docs/production-on-call-zh-TW.md">
+              <span class="resource-type">Operations</span>
+              <strong>正式監控與 on-call</strong>
+              <span>事件分級、告警處理、回滾、死信、客服範本與交班原則。</span>
+            </a>
+          </div>
+        </div>
+
+        <div data-copy="en" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-index">07 · Docs and source</span>
+              <h2>Public, inspectable<br>ready to evolve</h2>
+            </div>
+            <p class="section-intro">
+              The gateway is open source under AGPL-3.0. Product guidance, production operations,
+              technical decisions, interoperability evidence, and complete source remain in the public repository.
+            </p>
+          </div>
+
+          <div class="resource-grid">
+            <a class="resource-link" href="https://github.com/thematters/matters-fediverse-gateway/blob/main/docs/production-launch-comms-zh-TW.md">
+              <span class="resource-type">Author guide</span>
+              <strong>Activation and FAQ</strong>
+              <span>How to enable federation, eligible content, Threads guidance, and remote-copy disclosure.</span>
+            </a>
+            <a class="resource-link" href="https://github.com/thematters/matters-fediverse-gateway">
+              <span class="resource-type">Open source</span>
+              <strong>Source and research</strong>
+              <span>Gateway, Worker, specifications, ADRs, interoperability evidence, tests, and development history.</span>
+            </a>
+            <a class="resource-link" href="https://github.com/thematters/matters-fediverse-gateway/blob/main/docs/production-on-call-zh-TW.md">
+              <span class="resource-type">Operations</span>
+              <strong>Monitoring and on-call</strong>
+              <span>Severity levels, alert response, rollback, dead letters, support templates, and handoff.</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing">
+      <div class="shell">
+        <div data-copy="zh">
+          <blockquote>打通文章的聯邦宇宙是第一步。接下來，讓深度內容進入更廣闊的公共討論。</blockquote>
+          <p>一篇文章從 Matters 出發，現在可以抵達更多讀者，也能把更多社群的回應帶回同一個開放網路。</p>
+        </div>
+        <div data-copy="en" hidden>
+          <blockquote>Federating the article is the first step. Next, long-form ideas can take part in a wider public conversation.</blockquote>
+          <p>An article can now leave Matters, reach more readers, and bring more communities into the same open network.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-inner">
+      <div class="footer-meta">
+        <span data-copy="zh">Matters Fediverse Gateway · 正式上線紀錄 · 2026</span>
+        <span data-copy="en" hidden>Matters Fediverse Gateway · Production record · 2026</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://matters.town">Matters</a>
+        <a href="https://github.com/thematters/matters-fediverse-gateway">GitHub</a>
+        <a href="https://matters.town/.well-known/nodeinfo">NodeInfo</a>
+        <a href="https://github.com/thematters/matters-fediverse-gateway/blob/main/LICENSE">AGPL-3.0</a>
+      </div>
     </div>
-    <div class="flow-step">
-      <span class="flow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5M8 13h8M8 17h6"/></svg></span>
-      <h3>ActivityPub seed bundle</h3>
-      <p>The static layer emits <code>manifest</code>, seed actor, and seed outbox.</p>
-    </div>
-    <div class="flow-step">
-      <span class="flow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M7 7v10a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7"/><path d="M9 7V5h6v2"/></svg></span>
-      <h3>Gateway runtime</h3>
-      <p><code>gateway-core</code> owns identity, inbox, delivery, moderation, and recovery.</p>
-    </div>
-    <div class="flow-step">
-      <span class="flow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg></span>
-      <h3>Fediverse reach</h3>
-      <p>Fediverse users discover, follow, read, reply, like, and boost.</p>
-    </div>
-  </div>
-  <div class="effect-strip">
-    <div class="effect"><strong>For writers</strong><span>Long-form work gets social reach without surrendering archive durability.</span></div>
-    <div class="effect"><strong>For readers</strong><span>Articles appear inside existing Fediverse clients as first-class <code>Article</code> objects.</span></div>
-    <div class="effect"><strong>For operators</strong><span>Moderation, delivery state, keys, and recovery stay in a dedicated runtime.</span></div>
-  </div>
-</section>
+  </footer>
 
-<section>
-  <h2>Try the prototype</h2>
-  <p>The live Cloudflare Worker prototype demonstrates the read-side federation surface with ActivityPub and NodeInfo JSON served from narrow routes on the Matters domain. The canonical demo actor is <code>acct:matters@matters.town</code>. The pilot identity <code>acct:mashbeanmatters@matters.town</code> is now exposed on the narrow canonical routes and configured pilot traffic is proxied to an AWS-hosted <code>gateway-core</code> origin with SQLite persistence. The demo article is represented as an ActivityPub <code>Article</code>, not reduced to a short-form note.</p>
-  <table>
-    <thead><tr><th>Endpoint</th><th>URL</th></tr></thead>
-    <tbody>
-      <tr><td>Matters root</td><td><a href="https://matters.town/">matters.town</a></td></tr>
-      <tr><td>WebFinger</td><td><a href="https://matters.town/.well-known/webfinger?resource=acct:matters@matters.town">/.well-known/webfinger?resource=acct:matters@matters.town</a></td></tr>
-      <tr><td>Actor</td><td><a href="https://matters.town/ap/users/matters">/ap/users/matters</a></td></tr>
-      <tr><td>Pilot WebFinger</td><td><a href="https://matters.town/.well-known/webfinger?resource=acct:mashbeanmatters@matters.town">/.well-known/webfinger?resource=acct:mashbeanmatters@matters.town</a></td></tr>
-      <tr><td>Pilot actor</td><td><a href="https://matters.town/ap/users/mashbeanmatters">/ap/users/mashbeanmatters</a></td></tr>
-      <tr><td>Outbox</td><td><a href="https://matters.town/ap/users/matters/outbox">/ap/users/matters/outbox</a></td></tr>
-      <tr><td>Article</td><td><a href="https://matters.town/ap/articles/matters-main-site-open-social-demo">/ap/articles/matters-main-site-open-social-demo</a></td></tr>
-      <tr><td>Seed manifest</td><td><a href="https://matters.town/ap/seed/activitypub-manifest.json">/ap/seed/activitypub-manifest.json</a></td></tr>
-      <tr><td>Seed outbox</td><td><a href="https://matters.town/ap/seed/outbox.jsonld">/ap/seed/outbox.jsonld</a></td></tr>
-      <tr><td>NodeInfo discovery</td><td><a href="https://matters.town/.well-known/nodeinfo">/.well-known/nodeinfo</a></td></tr>
-      <tr><td>NodeInfo 2.1</td><td><a href="https://matters.town/ap/instance-info/2.1">/ap/instance-info/2.1</a></td></tr>
-    </tbody>
-  </table>
-  <p>The isolated Worker testbed remains available at <a href="https://gateway-demo.matters.town/">gateway-demo.matters.town</a> for edge-runtime diagnostics without touching the main-site root route.</p>
-  <p>The static GitHub Pages prototype remains available for the seed-bundle surface: <a href="https://thematters.github.io/.well-known/webfinger?resource=acct:matters@thematters.github.io">WebFinger</a>, <a href="https://thematters.github.io/users/matters.json">actor</a>, <a href="https://thematters.github.io/users/matters/outbox">outbox</a>, <a href="https://thematters.github.io/articles/matters-main-site-open-social-demo">Article</a>, <a href="https://thematters.github.io/seed/activitypub-manifest.json">seed manifest</a>, <a href="https://thematters.github.io/seed/outbox.jsonld">seed outbox</a>, and <a href="https://thematters.github.io/nodeinfo/2.1">NodeInfo</a>.</p>
-  <p>This is not a production service. It does not accept real user content. The Worker currently demonstrates ActivityPub content types, edge routing, seed bundle exposure, and signed inbox pass-through to the isolated <code>gateway-core</code> origin for the configured pilot actor.</p>
-</section>
+  <script>
+    (() => {
+      const copies = Array.from(document.querySelectorAll("[data-copy]"));
+      const buttons = Array.from(document.querySelectorAll("[data-set-lang]"));
+      const metadata = {
+        zh: {
+          htmlLang: "zh-Hant",
+          title: "Matters 聯邦宇宙正式上線 | Matters Fediverse Gateway",
+          description: "Matters Fediverse Gateway 正式上線紀錄。了解作者功能、ActivityPub 架構、互通成果、開發挑戰與正式維運方式。",
+          switchLabel: "切換語言"
+        },
+        en: {
+          htmlLang: "en",
+          title: "Matters Fediverse Gateway | Production launch",
+          description: "The production record of Matters Fediverse Gateway, including author features, ActivityPub architecture, interoperability results, engineering challenges, and operations.",
+          switchLabel: "Switch language"
+        }
+      };
 
-<section>
-  <h2>Latest progress</h2>
-  <p>The project has moved beyond fixture-only demos. A G2-A preflight slice now connects selected real public Matters article data to the federation bundle contract, G2-B pilot product controls have landed on the staging path, and the record-only publish/edit trigger scaffold is enabled and verified on develop. The product gating contract has also been updated: <code>matters-server</code> now exposes public-safe current-viewer eligibility through <code>User.features.fediverseBeta</code>, while admin-only <code>User.oss.featureFlags</code> remains an internal inventory surface. <code>matters-web</code> uses <code>viewer.features.fediverseBeta</code> for the settings, draft, and article edit controls, and the no-flash eligibility fix is merged and deployed on the staging path. The staging gateway has delivered Update and bounded Delete activities to accepted Mastodon-compatible and Misskey followers, with repeatable Mastodon API read-back now available. Canonical identity cutover has started for <code>acct:mashbeanmatters@matters.town</code>; the AWS <code>gateway-core</code> origin is live behind the Worker, g0v.social Mastodon follow proof has passed, gyutte.site Misskey follow convergence has passed, Threads Follow now completes after the embedded-Follow Accept compatibility fix, and an offline SQLite backup/restore drill has preserved the live origin follower and trace data. Canonical WebFinger and actor profile URLs now both point to the working Matters profile page. Production <code>matters-server-prod-new</code> is now in <code>record_only</code> observation mode for the approved <code>mashbean</code> pilot slice; Elastic Beanstalk returned to Ready / Green / Ok after the setting change, production health and schema checks passed, and broad server-triggered production outbound delivery remains disabled outside bounded gateway-origin pilot sends. A 2026-06-05 source check confirmed that <code>matters-server</code> currently supports only <code>off</code> and <code>record_only</code>, so full outbound requires an implementation PR rather than an Elastic Beanstalk setting change. The 2026-05-22 production preflight reports <code>ok=true</code>, outbox <code>totalItems=0</code>, followers <code>totalItems=2</code>, and <code>fullOutboundEnabled=false</code>. Private pilot S3 storage now exists at <code>s3://matters-fediverse-prod-bundles/pilot/</code>, the live-origin SQLite backup succeeded, and the latest consistency scan has only explained SQLite-primary diffs. The first real production pilot article <a href="https://matters.town/a/3tmz0u0a42qx"><code>3tmz0u0a42qx</code></a> is public, active, owned by <code>mashbean</code>, and GraphQL reports <code>federationEligibility.eligible=true</code>. Read-only production workflow run <a href="https://github.com/thematters/matters-server/actions/runs/26079277083"><code>26079277083</code></a> confirmed its audit row as <code>record_only</code>, <code>recorded</code>, and <code>eligible=true</code>; repeat run <a href="https://github.com/thematters/matters-server/actions/runs/26269962135"><code>26269962135</code></a> confirmed the redacted <code>include_decision_report=false</code> query path after the v5.23.0 release. During the approved 2026-05-22 16:43-20:43 CST pilot window, one bounded gateway-origin <code>Create</code> for article <code>1225211</code> delivered to the two accepted pilot followers on g0v.social and gyutte.site with HTTP 202; Mastodon readback found the real article URL, Misskey visual readback showed the canonical actor and article, and post-send queue/SQLite checks stayed healthy. On 2026-05-28, one bounded gateway-origin <code>Update</code> for the same article also delivered to the same two accepted followers with HTTP 202; post-send queue stayed at <code>pending=0</code> and <code>deadLetter=0</code>, Mastodon readback still found the real article, and Misskey visual readback still showed the canonical actor and article. On 2026-06-02, the latest public Article <code>Create</code> delivered to the accepted Threads follower as well. On 2026-06-05, after the pilot-outbound decision, a bounded gateway-origin <code>Update</code> for article <code>1228008</code> / <code>n0wacr6zgyyq</code> delivered to g0v.social, gyutte.site, and Threads while production server-triggered outbound stayed disabled; Mastodon API readback was then restored on both the local checkout and AWS gateway VM and returned <code>ok=true</code> for the article URL. PR #118 and PR #119 added auditable resolve paths for obsolete dead-letter and retry-pending payloads, then the AWS origin was deployed to <code>9f58054</code>; the old Threads <code>atomUri</code> probe and first companion <code>Note</code> failure were marked resolved without replay, leaving the live queue at <code>pending=0</code>, <code>retryPending=0</code>, and <code>deadLetter=0</code>. On 2026-06-03, bounded <code>Create(Note)</code> visibility probes delivered to Threads with HTTP 200, and public <code>/ap/notes/*</code> dereferencing now returns ActivityPub JSON after the Worker proxy fix. Article object routing has also been corrected for future sends: PR #98 deployed the Worker route for canonical <code>/ap/articles/*</code> reads, PR #100 deployed gateway-core canonical Article object ids, and PR #102 removed public <code>atomUri</code> injection after the successful full Threads Article probe. The current successful canonical Article object is publicly readable as ActivityPub JSON with canonical <code>id</code>, Matters short <code>url</code>, <code>published</code>, <code>updated</code>, <code>mediaType</code>, and no <code>atomUri</code>. Threads receiver-visible profile/feed display is now confirmed by human UI readback, exact-handle account search now finds <code>@mashbeanmatters@matters.town</code>, and Threads-origin Likes returned to gateway-core for both the visible Note probe and latest companion Note. PR #107 and PR #108 added and corrected a disabled-by-default, pilot-only, <code>threads.net</code>-scoped companion <code>Note</code> adapter; the 2026-06-04 bounded proof delivered both the main <code>Article</code> activity and the companion <code>Note</code> activity to Threads, and the companion object dereferences publicly as plain-text ActivityPub JSON. The expanded Threads discovery regression now checks exact public activity/object URLs with Meta-like user agents; the live run returned <code>ok=true</code> for WebFinger, actor, outbox, Article, Note, and companion activity, with no Cloudflare challenge detected. Logged-in Threads UI readback confirms the latest companion Note is visible, <code>查看原始貼文</code> points back to the Matters canonical article URL, and remote Reply / Share plus Threads single-post permalink remain Threads beta UI limitations rather than gateway blockers. The 2026-05-28 bounded withdrawal rehearsal partially passed: Mastodon withdrew the real article status, but gyutte.site Misskey accepted string, URL, Tombstone, and <code>Tombstone(formerType=Article)</code> Delete variants while still showing the remote note. Treat remote visible withdrawal as best-effort unless a specific receiver proves removal.</p>
-  <table>
-    <thead><tr><th>Area</th><th>Current state</th><th>Next step</th></tr></thead>
-    <tbody>
-      <tr><td>Gateway runtime</td><td><code>gateway-core</code> has 148 local automated tests passing with SQLite as the runtime state source of truth. It now supports a public ActivityPub path prefix for the canonical <code>matters.town/ap/*</code> route, so an edge proxy can strip <code>/ap</code> internally while the origin still signs canonical public IDs. The isolated AWS origin is active behind Cloudflare Tunnel, <code>/ap/healthz</code> reports <code>gateway-core-proxy</code>, <code>check:production-record-only</code> returns <code>ok=true</code>, offline backup/restore verification returned SQLite integrity <code>ok</code>, and the 2026-06-05 live queue snapshot shows <code>pending=0</code>, <code>processing=0</code>, <code>retryPending=0</code>, <code>deadLetter=0</code>, and <code>resolved=2</code>. Mastodon post-send API readback is automated through a read-only g0v.social token on the local checkout and AWS gateway VM.</td><td>Keep the origin healthy, rehearse live rollback separately, and implement the server-triggered outbound path before claiming full production outbound.</td></tr>
-      <tr><td>Interop</td><td>Mastodon and g0v.social discovery/follow paths are archived. Canonical <code>acct:mashbeanmatters@matters.town</code> Mastodon follow now reaches the AWS origin inbox, passes HTTP Signature verification, creates one accepted SQLite follower row, and receives a signed Accept with HTTP 202. Misskey public staging discovery, follow, text Article display, media display, and human visual review are complete on gyutte.site for the staging-gateway actor. Canonical Misskey Follow now reaches gateway-core, receives delivered Accept responses, and gyutte.site reports <code>isFollowing=true</code> after the staging actor key id was moved to <code>#gateway-core-20260517</code> to avoid the earlier Worker demo key cache. Threads Follow now reaches gateway-core, remote actor/key discovery succeeds, and embedded-Follow Accept responses deliver to <code>https://threads.net/ap/inbox/</code>. Public Article <code>Create</code> has delivered to g0v.social, gyutte.site, and Threads. The accepted full Threads Article shape is now the target gateway contract: canonical <code>/ap/articles/*</code> object id, Matters short <code>url</code>, <code>published</code>, <code>updated</code>, <code>mediaType</code>, and no public <code>atomUri</code>. The post-cleanup probe <code>1780529129484-create-mashbeanmatters</code> delivered to all three pilot recipients, and its public object is readable as ActivityPub JSON. A bounded Threads <code>Create(Note)</code> probe also delivered and is now visible on the Threads remote profile page. Threads exact-handle account search now finds <code>@mashbeanmatters@matters.town</code>. A Threads-origin Like for that visible Note returned to gateway-core as <code>actionMatrix.inbound.like=1</code>. A disabled-by-default, pilot-only Note companion adapter is now implemented for configured <code>Create(Article)</code> fanout, preserving Article as the primary object. After PR #108, the companion payload is plain text and the 2026-06-04 bounded proof delivered the companion <code>Note</code> to Threads. Logged-in UI readback shows <code>查看原始貼文</code> points to the Matters canonical article URL, while Threads currently blocks remote Reply and Share and does not expose a copyable Threads permalink for the remote post. Mastodon readback and Misskey notes readback previously found the canonical Article. Misskey reply, like, and renote returned to gateway-core as <code>reply.stored</code>, <code>like.stored</code>, and <code>announce.stored</code>. Mastodon visible withdrawal passed; Misskey accepts Delete but may retain the remote note.</td><td>Keep Mastodon and Misskey in the passed baseline. Keep the Note companion pilot-scoped and receiver-scoped while Threads permalink, reply, and share remain receiver-side beta limitations.</td></tr>
-      <tr><td>Real Matters article export</td><td><code>matters-server</code> PR <a href="https://github.com/thematters/matters-server/pull/4761">#4761</a> is merged to <code>develop</code>; the post-merge develop deploy to <code>matters.icu</code> passed. The first bounded production <code>Create</code> for real article <code>1225211</code> delivered during the approved pilot window. A 2026-06-05 source check confirmed that <code>matters-server</code> currently supports only <code>off</code> and <code>record_only</code> trigger modes.</td><td>Production may proceed only as bounded <code>mashbean</code> pilot work until a reviewed non-<code>record_only</code> server/Lambda/gateway trigger path lands.</td></tr>
-      <tr><td>Product controls</td><td>G2-B contract implementation is merged to <code>develop</code>. <code>matters-server</code> PR <a href="https://github.com/thematters/matters-server/pull/4773">#4773</a> adds read-side federation settings and pilot-scoped author/article mutations. <code>matters-web</code> PR <a href="https://github.com/thematters/matters-web/pull/5883">#5883</a> adds pilot UI controls for account-level opt-in and per-article override. The production-facing eligibility contract was updated by <code>matters-server</code> PR <a href="https://github.com/thematters/matters-server/pull/4798">#4798</a>, which adds <code>User.features.fediverseBeta</code> for public-safe current-viewer gating, and <code>matters-web</code> PR <a href="https://github.com/thematters/matters-web/pull/5905">#5905</a>, which restores the controls through <code>viewer.features.fediverseBeta</code>. <code>matters-web</code> PR <a href="https://github.com/thematters/matters-web/pull/5906">#5906</a> added the no-flash UI fix, and develop parity PR <a href="https://github.com/thematters/matters-web/pull/5907">#5907</a> is merged and deployed to <code>matters.icu</code>. Both develop deploys passed on <code>matters.icu</code>, <code>server.matters.icu</code> exposes <code>UserFeatures.fediverseBeta</code>, the live settings chunk now queries <code>viewer.features.fediverseBeta</code>, and <code>mashbean@matters.town</code> is confirmed as a staging admin with <code>fediverseBeta</code> and account federation enabled. Browser QA now confirms the account settings row and article edit override on pilot-owned public article <code>23525</code>. Server PR <a href="https://github.com/thematters/matters-server/pull/4774">#4774</a> is also merged and deployed to develop; its migration, EB deploy, Lambda deploy, and notification jobs passed in <a href="https://github.com/thematters/matters-server/actions/runs/25768243309">run 25768243309</a>. <code>MATTERS_FEDERATION_EXPORT_TRIGGER_MODE=record_only</code> is enabled on <code>matters-server-develop</code>, and fresh article <code>23534</code> produced both <code>publish_article</code> and <code>revise_article</code> audit rows with <code>record_only</code>, <code>recorded</code>, and <code>eligible=true</code>. Production <code>matters-server-prod-new</code> now also has <code>MATTERS_FEDERATION_EXPORT_TRIGGER_MODE=record_only</code>; the Elastic Beanstalk update completed back to Ready / Green / Ok, <code>server.matters.town</code> health returned 200, and the 2026-05-22 production preflight still passed with outbox <code>totalItems=0</code>. Production <code>mashbean</code> now has visible Fediverse settings, author federation enabled, and the first real public pilot article <code>1225211</code> / <code>3tmz0u0a42qx</code> has passing production audit rows on both the original evidence run and the post-release redacted repeat query.</td><td>Next production step is still gated full outbound readiness. Audit row observation passed in <a href="https://github.com/thematters/matters-server/actions/runs/26079277083">run 26079277083</a> and repeat query <a href="https://github.com/thematters/matters-server/actions/runs/26269962135">run 26269962135</a>; Matters current General Manager is the decision owner for the remaining storage, rollback, takedown, legal/privacy, key rotation, secrets, and launch gates.</td></tr>
-      <tr><td>Async export worker</td><td><code>lambda-handlers</code> PR <a href="https://github.com/thematters/lambda-handlers/pull/217">#217</a> merged the federation export handler. PR <a href="https://github.com/thematters/lambda-handlers/pull/223">#223</a> removed duplicate manifest output, published <code>v0.14.1</code>, updated <code>federation-export-dev</code>, and passed fixture smoke verification. Deployed-Lambda staging runs against real <code>matters.icu</code> rows now cover both public-only and strict-gate payloads. After real staging settings were enabled, public article <code>23520</code> passed while paywalled article <code>23522</code> stayed blocked in <a href="https://github.com/thematters/lambda-handlers/actions/runs/25712528545">run 25712528545</a>; pilot-owned public article <code>23525</code> exported successfully in <a href="https://github.com/thematters/lambda-handlers/actions/runs/25713858021">run 25713858021</a>. The latest staging workflow <a href="https://github.com/thematters/lambda-handlers/actions/runs/26017383955">run 26017383955</a> again selected public article <code>23525</code>, skipped paywalled article <code>23522</code> as <code>article_not_public</code>, returned one eligible generated bundle, and kept <code>dryRun=true</code>.</td><td>Use the GitHub Actions staging workflow as the repeatable deployed-Lambda path. The direct <code>articleIds</code> Lambda invocation currently lacks DB environment variables and is not the validated path.</td></tr>
-      <tr><td>Generator package</td><td><code>ipns-site-generator</code> PR <a href="https://github.com/thematters/ipns-site-generator/pull/161">#161</a> is merged to <code>main</code> with the ActivityPub bundle contract.</td><td>Keep downstream callers on the registry package and preserve public-only bundle semantics.</td></tr>
-      <tr><td>Staging proof</td><td><code>@charlesmungerai</code> public Matters articles were exported into a staging bundle; one fresh public Article was delivered to gyutte.site Misskey through the gateway. The real deployed-Lambda bundles for <code>zeckagent3@staging-gateway.matters.town</code> and <code>mashbeanmatters@staging-gateway.matters.town</code> also passed WebFinger, actor, outbox, NodeInfo, manifest, SQLite consistency, and Misskey read-side probes. The latest pilot article <code>23525</code> has now passed staging outbound <code>Update</code> delivery to g0v.social and gyutte.site; post-delivery consistency scan returned <code>totalDiffs=0</code>. A staging-only Delete proof for <code>staging-delete-proof-20260515T120541Z</code> delivered to both accepted followers, and g0v.social returned <code>404</code> for the deleted status.</td><td>Do not treat this as production. Keep staging local/tunnel-based until production credentials, storage, Access, and rollout gates are approved.</td></tr>
-    </tbody>
-  </table>
-</section>
+      const setLanguage = (language, updateUrl = false) => {
+        const next = language === "en" ? "en" : "zh";
+        const settings = metadata[next];
 
-<section>
-  <h2>ActivityPub seed bundle</h2>
-  <p>The seed bundle is the contract between <code>ipns-site-generator</code> and <code>gateway-core</code>. The static publisher should only emit public data that is safe to federate. The gateway then rewrites that seed into canonical ActivityPub identity and runtime state.</p>
-  <div class="bundle-list">
-    <div class="bundle-row"><strong><code>activitypub-manifest.json</code></strong><span>Declares generator version, source actor, canonical gateway actor, listed files, and the public-only visibility boundary.</span></div>
-    <div class="bundle-row"><strong><code>about.jsonld</code></strong><span>Represents the static source actor before gateway canonicalization. Personal static sites can use this directly; Matters production should use the gateway actor.</span></div>
-    <div class="bundle-row"><strong><code>outbox.jsonld</code></strong><span>Contains public <code>Create</code> activities whose objects are <code>Article</code>, with canonical links back to Matters public articles.</span></div>
-    <div class="bundle-row"><strong>Gateway rewrite</strong><span>Rewrites actor, outbox, followers, audience, and key references to the runtime actor, while preserving article content, summary, tags, attachments, and canonical URL.</span></div>
-  </div>
-  <p class="callout">The public boundary is part of the data contract: paid, encrypted, private, draft, and message-like content must be excluded before the seed bundle is generated.</p>
-</section>
+        document.body.dataset.lang = next;
+        document.documentElement.lang = settings.htmlLang;
+        document.title = settings.title;
+        document.querySelector('meta[name="description"]').setAttribute("content", settings.description);
+        document.querySelector(".language-switch").setAttribute("aria-label", settings.switchLabel);
 
-<section>
-  <h2>Architecture</h2>
-  <pre class="ascii">matters-server
-public-only eligibility / author and article federation settings
-        |
-        v
-lambda-handlers federation-export
-async bundle generation / optional S3 publication
-        |
-        v
-ipns-site-generator
-        |
-        +-- HTML / RSS / JSON Feed / IPFS-IPNS output
-        |
-        +-- ActivityPub seed bundle
-              |
-              v
-Cloudflare Worker edge
-        |
-        +-- WebFinger / NodeInfo / pilot actor pass-through
-        |
-        +-- signed inbox pass-through
-              |
-              v
-gateway-core runtime
-        |
-        +-- HTTP signatures / followers / delivery queue
-        +-- moderation / audit / alerts / recovery
-              |
-              v
-Mastodon / Misskey / GoToSocial / other Fediverse servers</pre>
-  <p><strong>Static + dynamic split</strong>: public article output remains durable through the IPFS/IPNS-oriented publishing layer. The gateway handles the dynamic social layer: discovery, inbox handling, followers, delivery state, moderation, and recovery. The proposed integration contract and Worker deployment path are documented in the <a href="https://github.com/thematters/matters-fediverse-gateway/blob/main/docs/ipns-gateway-cloudflare-plan.md">IPNS gateway plan</a>.</p>
-  <table>
-    <thead><tr><th>Repository</th><th>Responsibility</th><th>Boundary</th></tr></thead>
-    <tbody>
-      <tr><td><a href="https://github.com/thematters/matters-server"><code>matters-server</code></a></td><td>Owns Matters product data and backend rules. For G2-A it owns public-only eligibility, author/article federation settings, and selected public article payloads.</td><td>It does not render bundles, publish generated files, own Fediverse delivery state, or process remote inbox traffic.</td></tr>
-      <tr><td><a href="https://github.com/thematters/lambda-handlers"><code>lambda-handlers</code></a></td><td>Owns retryable async export jobs. The federation export handler can return generated files for preflight or write them to S3 when configured.</td><td>It does not decide product permissions, serve public ActivityPub routes, or own gateway social state.</td></tr>
-      <tr><td><a href="https://github.com/thematters/ipns-site-generator"><code>ipns-site-generator</code></a></td><td>Owns static publishing output. It turns a <code>HomepageContext</code> into HTML, RSS, JSON Feed, WebFinger, actor, outbox, and <code>activitypub-manifest.json</code>.</td><td>It does not read production DB directly, decide product permissions, orchestrate retries, or deliver ActivityPub activities.</td></tr>
-      <tr><td><a href="https://github.com/thematters/matters-fediverse-gateway"><code>matters-fediverse-gateway</code></a></td><td>Owns the federation runtime repo. Its <code>gateway-core</code> reads the generated manifest and serves canonical ActivityPub identity, inbox/outbox, signatures, followers, queues, moderation, persistence, and observability.</td><td>It does not replace Matters article editing/publishing or the IPFS/IPNS static generator.</td></tr>
-    </tbody>
-  </table>
-  <p>Put simply: <code>matters-server</code> decides which real public Matters content may be exported, <code>lambda-handlers</code> runs the retryable export job outside the main backend, <code>ipns-site-generator</code> turns that content into a durable public ActivityPub seed bundle, and <code>gateway-core</code> turns the seed bundle into a live Fediverse actor.</p>
-</section>
+        copies.forEach((node) => {
+          node.hidden = node.dataset.copy !== next;
+        });
 
-<section>
-  <h2>Current status</h2>
-  <div class="stage-list">
-    <span class="label">Stage 01</span><span class="name">Instance Platform</span><span class="status done">done</span>
-    <span class="label">Stage 02</span><span class="name">Identity &amp; Discovery</span><span class="status done">done</span>
-    <span class="label">Stage 03</span><span class="name">Gateway Core</span><span class="status wip">in progress</span>
-    <span class="label">Stage 04</span><span class="name">Social Interop</span><span class="status wip">in progress</span>
-    <span class="label">Stage 05</span><span class="name">Moderation &amp; Ops</span><span class="status wip">in progress</span>
-    <span class="label">Stage 06</span><span class="name">Multi-Instance Control Plane</span><span class="status todo">specified</span>
-    <span class="label">Stage 07</span><span class="name">Launch Readiness</span><span class="status todo">specified</span>
-  </div>
-  <ul>
-    <li>Public ActivityPub prototype endpoints are live: WebFinger, actor, outbox, Article, seed bundle, and NodeInfo.</li>
-    <li>Cloudflare Worker edge implementation is deployed for correct ActivityPub content types, edge routing, seed bundle exposure, pilot actor pass-through, and signed inbox pass-through.</li>
-    <li>148 <code>gateway-core</code> automated tests passed in the latest local verification snapshot.</li>
-    <li>Black-box interoperability checks completed with Mastodon surfaces, including successful exact discovery and inbound follow delivery from <code>g0v.social</code>; Misskey public Article delivery and display have also passed on gyutte.site. Staging outbound <code>Update</code> delivery for pilot article <code>23525</code> has delivered to both g0v.social and gyutte.site, repeatable Mastodon read-back is automated, and a bounded staging <code>Delete</code> proof has passed. A protected reconciliation run has also processed the public g0v.social reply Activity <code>116575631875488289/activity</code> through the scheduler path while preserving SQLite consistency. Canonical WebFinger now advertises <code>https://matters.town/@mashbeanmatters</code> as the profile page, matching the actor document. Canonical <code>acct:mashbeanmatters@matters.town</code> Mastodon, Misskey, and Threads follow paths now pass through the AWS gateway-core origin and converge to accepted persistent follower state. A canonical pilot Article is visible on both Mastodon and Misskey, the latest public Article <code>Create</code> and a bounded <code>Create(Note)</code> probe have delivered to Threads, the Threads remote profile/feed now shows the remote actor posts, and a Threads-origin Like returned to gateway-core for the visible Note. The pilot-only Threads companion adapter has also delivered a scoped companion <code>Note</code> for a public <code>Article</code> proof. Misskey reply / like / renote interactions return to gateway-core. Mastodon removed the pilot Article after Delete; Misskey accepted Delete deliveries but retained the remote note, so visible remote removal remains best-effort.</li>
-    <li>SQLite persistence plus backup, restore, reconcile, replay, and outbound/dead-letter resolve tooling are in place.</li>
-    <li>Webhook dispatch exists for metrics, alerts, logs, and Slack incoming webhooks.</li>
-    <li>G2-A real Matters article export is split across clear repo boundaries: merged server preflight PR #4761, merged generator PR #161, merged lambda handler PR #217, merged lambda manifest PR #223, deployed Lambda public-only and strict-gate staging generation, gateway runtime ingestion, NodeInfo public probing, SQLite consistency scan, and Misskey delivery/read-only verification. G2-B product controls are merged to develop through server PR #4773 and web PR #5883. The <code>mashbean@matters.town</code> pilot path now has API validation, browser UI validation, strict-gate Lambda run <code>25713858021</code>, public staging gateway probes, PR <a href="https://github.com/thematters/matters-fediverse-gateway/pull/29">#29</a> actor discovery hints, staging outbound <code>Update</code> and <code>Delete</code> proof for <code>mashbeanmatters@staging-gateway.matters.town</code>, and <code>record_only</code> publish/edit audit proof on article <code>23534</code>. Production <code>record_only</code> is now applied on <code>matters-server-prod-new</code>, the post-change preflight passed, and production article <code>1225211</code> / <code>3tmz0u0a42qx</code> has a passing <code>publish_article</code> audit row. Bounded gateway-origin production <code>Create</code> and <code>Update</code> pilots have delivered to accepted Mastodon, Misskey, and Threads pilot followers, and Mastodon API readback now passes from the AWS gateway VM. Bounded withdrawal passed on Mastodon but remains open for Misskey visible removal. Broad server-triggered production outbound remains disabled until <code>matters-server</code> implements a non-<code>record_only</code> trigger path.</li>
-  </ul>
-</section>
+        buttons.forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.setLang === next));
+        });
 
-<section>
-  <h2>Next work</h2>
-  <ol>
-    <li>Keep the staging scheduler running on bounded, operator-approved public Activity URL source files; do not add crawler-style remote discovery.</li>
-    <li>Keep the isolated AWS <code>gateway-core</code> origin connected to the Worker through <code>GATEWAY_CORE_ORIGIN</code> for the configured pilot path only.</li>
-    <li>Use the passed Mastodon canonical follow proof, Misskey canonical follow proof, Threads gateway-side follow proof, and offline backup/restore proof as the current gateway-core baseline.</li>
-    <li>Keep using the <a href="research/matters-fediverse-compat/05-roadmap/decisions/13-threads-article-note-compatibility.md">Threads Article / Note compatibility brief</a> and the <a href="research/matters-fediverse-compat/03-ops/threads-note-companion-proof-20260604.md">2026-06-04 companion proof</a> before expanding the disabled-by-default, pilot-only Note companion adapter.</li>
-    <li>Use the <a href="research/matters-fediverse-compat/05-roadmap/decisions/12-feature-dependency-audit-20260517.md">2026-05-17 feature dependency audit</a> as the current operator baseline for canonical pilot checks.</li>
-    <li>Use the read-only production preflight <code>cd gateway-core &amp;&amp; npm run check:production-record-only</code> after any production configuration change. It validates the canonical pilot surface and refuses unsafe assumptions such as non-<code>record_only</code>, non-<code>mashbean</code>, full outbound enabled, or <code>#main-key</code>.</li>
-    <li>Keep production in <code>record_only</code> after audit-row verification. Read-only workflow run <a href="https://github.com/thematters/matters-server/actions/runs/26079277083">26079277083</a> verified <code>article_id=1225211</code> with <code>mode=record_only</code>, <code>status=recorded</code>, and <code>eligible=true</code>; repeat workflow run <a href="https://github.com/thematters/matters-server/actions/runs/26269962135">26269962135</a> verified the redacted query path after the v5.23.0 release. Use the <a href="research/matters-fediverse-compat/03-ops/production-record-only-observation-runbook.md">production record-only observation runbook</a> for repeat checks.</li>
-    <li>Do not start broad production outbound delivery until <code>matters-server</code> implements a reviewed non-<code>record_only</code> trigger path and Matters current General Manager approves the rollout gates. Production private S3 storage now exists at <code>s3://matters-fediverse-prod-bundles/pilot/</code>. The first bounded <code>mashbean</code> production <code>Create</code> is archived in the <a href="research/matters-fediverse-compat/03-ops/production-pilot-create-run-20260522.md">production pilot Create run report</a>; the <a href="research/matters-fediverse-compat/03-ops/production-pilot-update-run-20260605.md">2026-06-05 production pilot Update run report</a> records the first post-decision bounded Update to Mastodon, Misskey, and Threads plus restored Mastodon API readback.</li>
-  </ol>
-</section>
+        try {
+          localStorage.setItem("matters-fediverse-language", next);
+        } catch {
+          // Language choice remains active for this page view.
+        }
 
-<section>
-  <h2>Roadmap</h2>
-  <table>
-    <thead><tr><th>Goal</th><th>Scope</th><th>Timeline</th></tr></thead>
-    <tbody>
-      <tr><td><strong>G1</strong></td><td>Single-instance reference release with multi-implementation interoperability.</td><td>3 months</td></tr>
-      <tr><td><strong>G2</strong></td><td>Matters production integration: pilot, beta, then general availability.</td><td>4-6 months</td></tr>
-      <tr><td><strong>G3</strong></td><td>Second-instance validation to prove reuse beyond Matters.</td><td>2 months</td></tr>
-    </tbody>
-  </table>
-  <p>The full roadmap is in <a href="https://github.com/thematters/matters-fediverse-gateway/blob/main/research/matters-fediverse-compat/05-roadmap/development-plan.md">development-plan</a>.</p>
-</section>
+        if (updateUrl) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("lang", next === "en" ? "en" : "zh-Hant");
+          history.replaceState(null, "", url);
+        }
+      };
 
-<section>
-  <h2>Technical decisions</h2>
-  <div class="grid2">
-    <div class="card">
-      <h3>Object type = <code>Article</code></h3>
-      <p>Long-form work is not downgraded to <code>Note</code>. Articles keep room for HTML, summary, attachments, and canonical links.</p>
-    </div>
-    <div class="card">
-      <h3>Static publishing + inbox bridge</h3>
-      <p>The project is not another full social server. Static publishing handles public article output; the gateway handles social state.</p>
-    </div>
-    <div class="card">
-      <h3>Programmed public-content boundary</h3>
-      <p>Paid, encrypted, private, and message-like content is blocked by code-level visibility gates, not by manual convention.</p>
-    </div>
-    <div class="card">
-      <h3>Worker-fronted runtime</h3>
-      <p>The first release can put a Cloudflare Worker in front of <code>gateway-core</code> for routing, content types, caching, size limits, and signed inbox pass-through.</p>
-    </div>
-  </div>
-</section>
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => setLanguage(button.dataset.setLang, true));
+      });
 
-<section>
-  <h2>Learn more</h2>
-  <div class="links">
-    <a href="https://github.com/thematters/matters-fediverse-gateway">GitHub repository</a>
-    <a href="https://matters.town/.well-known/webfinger?resource=acct:matters@matters.town">Canonical demo actor</a>
-    <a href="https://gateway-demo.matters.town">Worker testbed</a>
-    <a href="https://github.com/thematters/matters-fediverse-gateway/tree/main/gateway-core">gateway-core source</a>
-    <a href="https://github.com/thematters/matters-fediverse-gateway/tree/main/cloudflare-worker">Cloudflare Worker source</a>
-    <a href="https://github.com/thematters/matters-fediverse-gateway/blob/main/docs/ipns-gateway-cloudflare-plan.md">IPNS gateway plan</a>
-    <a href="https://github.com/thematters/matters-fediverse-gateway/tree/main/research/matters-fediverse-compat/01-specs">Engineering specs</a>
-    <a href="https://github.com/thematters/matters-fediverse-gateway/blob/main/research/matters-fediverse-compat/05-roadmap/development-plan.md">Roadmap</a>
-    <a href="https://matters.town">Matters.town</a>
-  </div>
-</section>
+      const requested = new URLSearchParams(window.location.search).get("lang");
+      let saved = "";
+      try {
+        saved = localStorage.getItem("matters-fediverse-language") || "";
+      } catch {
+        saved = "";
+      }
 
-<footer>
-  <p>License: <a href="https://github.com/thematters/matters-fediverse-gateway/blob/main/LICENSE">AGPL-3.0</a> · Maintainer: <a href="https://github.com/thematters">@thematters</a></p>
-  <p>Visual system: Matters Design System 1.5. This page is a prototype overview; the live public demo endpoint is <a href="https://matters.town/.well-known/webfinger?resource=acct:matters@matters.town">acct:matters@matters.town</a>.</p>
-</footer>
+      const initial = requested
+        ? (requested.toLowerCase().startsWith("en") ? "en" : "zh")
+        : (saved || (navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en"));
 
-</div>
+      setLanguage(initial);
+    })();
+  </script>
 </body>
 </html>
